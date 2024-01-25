@@ -26,7 +26,7 @@ public T GetSelectedObject()
 
 推荐VPN，然后查看自己打开VPN后的代理
 
-<img src="C:\\Files\\Note\\Images\\note_img_1.png">
+<img src=".\Images\note_img_1.png">
 
 然后设置Git Config
 
