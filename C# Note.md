@@ -34,7 +34,7 @@
 
 # 二、语言相关
 
-### 1.关于字典类型
+## 1.关于字典类型
 
 - 导入命名空间
 
@@ -92,7 +92,7 @@ foreach (var kvp in DictionaryName)
 }
 ```
 
-### 2.关于扩展方法
+## 2.关于扩展方法
 
 - 扩展方法能够向现有类型中“添加”方法，而无需创建新的派生类型、重新编译或以其他方式修改原始类型
 - 扩展方法是一种**静态方法**，但可以像扩展类型上的实例方法一样进行调用
@@ -119,7 +119,7 @@ namespace ExtensionMethods
 }
 ```
 
-### 3.关于集合类型
+## 3.关于集合类型
 
 - 点阵列`BitArray`：管理一个紧凑型的位置数组，使用布尔值表示。
 
@@ -158,7 +158,7 @@ namespace CollectionsApplication
 }
 ```
 
-### 4.关于枚举类型
+## 4.关于枚举类型
 
 ```c#
 using System;
@@ -190,7 +190,7 @@ namespace CSharp_Test
 }
 ```
 
-### 5.关于委托
+## 5.关于委托
 
 - 可以执行方法的类型，调用委托变量时执行的就是变量指向的方法。
 
@@ -226,18 +226,18 @@ namespace CSharp_Test
 
 **`Lambda`表达式**
 
-### 6.关于运算符重载
+## 6.关于运算符重载
 
 ```c#
 public static T operator +(T a, T b){}
 ```
 
-### 7.关于值类型和引用类型
+## 7.关于值类型和引用类型
 
 - **值类型**： 值类型变量声明后，不管是否已经赋值，编译器为其分配内存。`byte,short,int,long,float,double,decimal,char,bool,struct`
 - **引用类型**：`string`和`class`统称为引用类型。当声明一个类时，只在栈中分配一小片内存用于容纳一个地址，而此时并没有为其分配堆上的内存空间。当使用 $new$创建一个类的实例时，分配堆上的空间，并把堆上空间的地址保存到栈上分配的小片空间中。
 
-### 8.关于特性和反射   
+## 8.关于特性和反射
 
 1、**特性**：一种用于给代码元素（例如类、方法、属性、字段等）附加元数据的机制。特性提供了一种声明性的方法，用于描述代码元素的行为、特征或者配置信息。**类似于`Java`的注解**。
 
@@ -335,7 +335,7 @@ object value = property.GetValue(obj);
 property.SetValue(obj, newValue);
 ```
 
-### 9.可空引用类型
+## 9.可空引用类型
 
 ```c#
 namespace CommonExtensionMethods
@@ -355,9 +355,9 @@ namespace CommonExtensionMethods
 CS8618：在退出构造函数时，不可为 null 的 字段“Name”必须包含非 null 值。请考虑将 属性 声明为可以为 null
 ```
 
-引入“可空引用类型”是从编译器角度要求开发人员在编程的时候就考虑某个变量是否有可能为空，从而尽可能减少由空引用所带来的代码错误。
+​	引入“可空引用类型”是从编译器角度要求开发人员在编程的时候就考虑某个变量是否有可能为空，从而尽可能减少由空引用所带来的代码错误。
 
-当使用引用类型的时候会产生此警告（例如`string`），但是如果在一个类中的构造函数中将一个引用类型的字段赋值了，就不会出现此警告，因为已经保证了此字段不会为空，如下Name字段：
+​	当使用引用类型的时候会产生此警告（例如`string`），但是如果在一个类中的构造函数中将一个引用类型的字段赋值了，就不会出现此警告，因为已经保证了此字段不会为空，如下Name字段：
 
 ```c#
 class Employee
@@ -374,9 +374,98 @@ class Employee
 
 参考：https://www.cnblogs.com/daxnet/p/14456391.html
 
-### 10.Tips
+## 10.抽象方法VS虚方法
+
+- 抽象函数不能具有功能，任何子类都必须提供自己的该方法的版本。重点是实现多态，同一个方法能做不同的事情
+- 虚函数提供了一定的功能，子类如果够用则直接用，否则就 覆盖重写。当一个方法必须存在时。
+
+## 11.拆箱装箱
+
+装箱是将值类型转换为引用类型；拆箱是将引用类型转换为值类型。
+
+[C#装箱和拆箱（Boxing 和 UnBoxing）_c# boxing unboxing-CSDN博客](https://blog.csdn.net/qiaoquan3/article/details/51439726)
+
+## 12.协变和逆变
+
+​	协变和逆变都是术语，前者指能够使用比原始指定的派生类型的派生程度更大（更具体的）的类型，后者指能够使用比原始指定的派生类型的派生程度更小（不太具体的）的类型。
+
+> **协变**:IFoo<父类> = IFoo<子类>
+>
+> **逆变**:IBar<子类> = IBar<父类>
+
+(1)协变
+
+- 对于泛型类型参数，`out`关键字可指定类型参数是协变的。可以在泛型接口和委托中使用`out`关键字
+- 协变就是对具体成员的输出参数进行一次类型转换，且类型转换的准则是[里氏替换原则](https://baike.baidu.com/item/里氏替换原则/3744239?fr=aladdin)
+
+(2)逆变
+
+- 对于泛型类型参数，`in`关键字可指定类型参数是逆变的。可以在泛型接口和委托中使用`in`关键字。
+- 逆变就是对具体成员的输入参数进行一次类型转换，且类型转换的准则是[里氏替换原则](https://baike.baidu.com/item/里氏替换原则/3744239?fr=aladdin)
+
+(3)Q&A
+
+- **协变、逆变为什么只能针对泛型接口或者委托？而不能针对泛型类？**
+
+   因为它们都只能定义方法成员（接口不能定义字段），而方法成员在创建对象的时候是不涉及到对象内存分配的，所以它们是类型（内存）安全的。
+
+   为什么不针对泛型？因为泛型类是模板类，而类成员是包含字段的，不同类型的字段是影响对象内存分配的，没有派生关系的类型它们是不兼容的，也是内存不安全的。
+
+- **协变、逆变为什么是类型安全的?**
+
+   本质上是里氏替换原则，由里氏替换原则可知：派生程度小的是派生程度大的子集，所以子类替换父类的位置整个程序功能都不会发生改变。
+
+- **为什么in、out只能是单向的（输入或输出）？**
+
+   因为若类型参数同时为输入参数和输出参数，则必然会有一种转换不符合里氏替换原则，即将父类型的变量赋值给子类型的变量，这是不安全的所以需要明确指定in或out。
+
+```c#
+internal class Program
+{
+    private static void Main(string[] args)
+    {
+        IBar<object> barObj = new Bar();
+        //IBar<string> barStr = (IBar<string>)barObj; /* Right*/
+        IBar<string> barStr = barObj;  /* Wrong */
+
+        IFoo<object> fooObj = new Foo();
+        IFoo<string> fooStr = fooObj;
+
+        barStr.Print(fooStr);
+    }
+}
+
+internal interface IFoo<in T>
+{ }
+
+internal class Foo : IFoo<object>
+{ }
+
+//internal interface IBar<in T>  /* Right */
+internal interface IBar<out T>   /* Wrong */
+{
+    void Print(IFoo<T> foo);
+}
+
+internal class Bar : IBar<object>
+{
+    public void Print(IFoo<object> foo)
+    {
+        throw new NotImplementedException();
+    }
+}
+```
+
+> ​	**将可变成员作为方法的输入参数，则当前成员的泛型参数可变性必须与输入成员的泛型参数可变性相反**。
+>
+> ​	**将可变成员作为方法的返回参数，则当前成员的泛型参数可变性必须与输出成员的泛型参数可变性相同**。
+
+参考链接：[C# - 协变、逆变 看完这篇就懂了 - Virgil-Zhou - 博客园 (cnblogs.com)](https://www.cnblogs.com/VVStudy/p/11404300.html)
+
+## Last.Tips
 
 - 如果不显式制定访问修饰符（`public`、`private`），则默认为`private`
 - 对于具有多个元素的数据类型对象，例如数组、字典等，直接输出会输出对应的类型
 - `string`中的每个字符是`char`类型
 - `Console.Read()`读取为`int`类型，`Console.ReadLine()`读取为`string`类型
+
