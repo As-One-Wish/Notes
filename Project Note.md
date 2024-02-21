@@ -198,3 +198,60 @@ export default defineConfig({
 >
 >.NET Core类库一般是用于写业务或者应用为主，他的功能相对多些
 
+## 3.AutoInject
+
+```c#
+public static IServiceCollection AddScoped(this IServiceCollection services, Type serviceType, Type implementationType);
+```
+
+- `serviceType` 参数是服务的类型，即接口或抽象类。
+- `implementationType` 参数是实现服务的具体类型。
+
+即将`serviceType`类型的服务注册到服务容器中，在具体实现时使用`implementationType`类型
+
+## 4.IdelBus
+
+空闲对象管理器https://github.com/2881099/IdleBus
+
+## 5.自定义特性类
+
+```c#
+/// <summary>
+/// 自动注入特性
+/// </summary>
+[AttributeUsage(AttributeTargets.Class)]
+public class AutoInjectAttribute : Attribute
+{
+    public string Key { get; set; }
+    public ServiceLifetime Lifetime { get; set; }
+
+    public AutoInjectAttribute(ServiceLifetime serviceLifetime = ServiceLifetime.Scoped, string key = "default")
+    {
+        Lifetime = serviceLifetime;
+        Key = key;
+    }
+}
+```
+
+用于标识需要进行自动注入的类。
+
+- `AttributeUsage(AttributeTargets.Class)`：
+  - 这个特性类被标识为只能应用于类上，也就是说，它是一个类级别的特性
+
+- `public string Key { get; set; }`：
+  - 用于获取或设置注入的键（Key），这个键可能用于区分不同的服务
+- `public ServiceLifetime Lifetime { get; set; }`：
+  - 用于获取或设置服务的生命周期（Lifetime）
+
+> 生命周期表示注入的服务在容器中的存活时间，可以是 Singleton（单例）、Scoped（作用域）、Transient（瞬时）等
+
+在使用依赖注入容器进行服务注册时，通过解析这个特性，可以按照指定的键和生命周期进行服务的注册，例如：
+
+```C#
+[AutoInject(Key = "appService", Lifetime = ServiceLifetime.Singleton)]
+public class MyApplicationService
+{
+    // ...
+}
+```
+
