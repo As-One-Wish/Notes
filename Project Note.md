@@ -255,3 +255,76 @@ public class MyApplicationService
 }
 ```
 
+## 6.AutoMapper
+
+- **AutoMapper的注入**
+
+```c#
+/// <summary>
+/// AutoMapper 配置
+/// </summary>
+public static class AutoMapperConfig
+{
+    /// <summary>
+    /// AutoMapper注入
+    /// </summary>
+    /// <param name="services"></param>
+    /// <exception cref="ArgumentNullException"></exception>
+    public static void AddAutoMapperConfiguration(this IServiceCollection services)
+    {
+        if (services == null) throw new ArgumentNullException(nameof(services));
+
+        var autoMapperProfileList = GetAutoMapperProfiles();
+        // 注入AutoMapper策略
+        MapperConfiguration config = new MapperConfiguration(cfg =>
+        {
+            foreach (var profile in autoMapperProfileList)
+                cfg.AddProfile(profile);
+        });
+
+        IMapper mapper = config.CreateMapper();
+        services.AddSingleton(mapper);
+    }
+
+    /// <summary>
+    /// 利用反射获取AutoMapper类型
+    /// </summary>
+    /// <returns></returns>
+    public static IEnumerable<Type> GetAutoMapperProfiles()
+    {
+        var assemblies = Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory, "Info.*.AutoMapper.dll").Select(Assembly.LoadFrom).ToList();
+        if (assemblies != null && assemblies.Count > 0)
+        {
+            List<Type> types = assemblies.Where(d => d.FullName != null && d.FullName.Split(',')[0].EndsWith("AutoMapper"))
+                .SelectMany(x => x.GetTypes())
+                .Where(t => t.IsClass && !t.IsAbstract && (t.BaseType?.FullName == "AutoMapper.Profile"))
+                .ToList();
+            return types;
+        }
+        else
+            return Enumerable.Empty<Type>();
+    }
+}
+```
+
+- **AutoMapper的编辑和使用**
+
+https://www.cnblogs.com/gl1573/p/13098031.html
+
+## 7.Yitter/IdGenerator
+
+雪花算法中的数字ID生成器
+
+https://github.com/yitter/IdGenerator?tab=readme-ov-file
+
+> 雪花算法：
+>
+> - 是一种生成分布式全局唯一ID的算法，生成的ID称为`Snowflake IDs`或`snowflakes`
+> - 一个Snowflake ID有64比特。前41位是时间戳，表示了自选定的时期以来的毫秒数。 接下来的10位代表计算机ID，防止冲突。其余12位代表每台机器上生成ID的序列号，这允许在同一毫秒内创建多个Snowflake ID。最后以十进制将数字序列化。
+
+## 8.Jwt认证及授权
+
+- `Authentication`(认证):标识用户的身份，一般发生在登录的时候
+- `Authorization`(授权):授予用户权限，指定用户能访问哪些资源；在认证之后
+
+### 8.1 认证(Authentication)
