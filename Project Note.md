@@ -327,4 +327,234 @@ https://github.com/yitter/IdGenerator?tab=readme-ov-file
 - `Authentication`(认证):标识用户的身份，一般发生在登录的时候
 - `Authorization`(授权):授予用户权限，指定用户能访问哪些资源；在认证之后
 
-### 8.1 认证(Authentication)
+![](C:\Files\Notes\Images\ProjectNote-2.png)
+
+### 8.1 生成Token令牌
+
+$$
+Jwt{\quad}Token
+\begin{cases}
+A-header头信息
+\begin{cases}
+alg:加密算法名称\\
+typ:JWT
+\end{cases}\\
+B-payload有效载荷
+\begin{cases}
+iss:发行者\\
+exp:到期时间\\
+sub:主题\\
+aud:受众
+\end{cases}\\
+C-Signature签名:
+是服务器验证传递数据是否有效安全的标准
+\end{cases}
+$$
+
+- **添加基本配置**
+
+```json
+/* appsettings.json */
+"Jwt": {
+  "SecurityKey": "8602e9953dbe0ae4b82f49bbee9a6fc4", // 大于16位
+  "Issuer": "Info.Storage",
+  "Audience": "Info.Storage",
+  "ExpireMinutes": "10080"
+},
+```
+
+- **创建Jwt Token**
+
+```c#
+public JwtAuthorizationDto CreateJwt(JwtUserDto jwtUserDto)
+{
+    try
+    {
+        // 创建 JwtSecurityTokenHandler 实例，用于处理 JWT 操作
+        JwtSecurityTokenHandler jwtSecurityTokenHandler = new JwtSecurityTokenHandler();
+        SymmetricSecurityKey key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:SecurityKey"]!));
+
+        DateTime authTime = DateTime.Now;
+        DateTime expireTime = authTime.AddMinutes(Convert.ToDouble(_configuration["Jwt:ExpireMinutes"]));
+
+        // 将用户信息添加到Claim(声明)中
+        List<Claim> claims = new List<Claim>()
+        {
+            new Claim("userId",jwtUserDto.UserId.ToString()),
+            new Claim("userName",jwtUserDto.UserName),
+            new Claim("roleId",jwtUserDto.RoleId.ToString()),
+            new Claim("account",jwtUserDto.Account),
+            new Claim("roleName", jwtUserDto.RoleName)
+        };
+        // 签发一个加密后的用户信息凭证，用来标识用户身份
+        SecurityTokenDescriptor tokenDescriptor = new SecurityTokenDescriptor
+        {
+            Subject = new ClaimsIdentity(claims), // 创建声明信息
+            Issuer = _configuration["Jwt:Issuer"], // Jwt token 的签发者
+            Audience = _configuration["Jwt:Audience"], // Jwt token 的接受者
+            Expires = expireTime, // 过期时间
+            SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256), // 创建 token
+        };
+
+        var token = jwtSecurityTokenHandler.CreateToken(tokenDescriptor);
+        // 存储token信息
+        var jwt = new JwtAuthorizationDto
+        {
+            Token = jwtSecurityTokenHandler.WriteToken(token),
+            AuthTime = new DateTimeOffset(authTime).ToUnixTimeSeconds(),
+            ExpireTime = new DateTimeOffset(expireTime).ToUnixTimeSeconds(),
+        };
+        return jwt;
+    }
+    catch (Exception ex)
+    {
+        LogHelper.Error(ex);
+        return default;
+    }
+}
+```
+
+### 8.2 Jwt配置
+
+包含授权方案设置：基于角色授权、基于声明授权、基于策略自定义授权
+
+https://cloud.tencent.com/developer/article/1498360
+
+```C#
+/* JwtConfig.cs */
+public static void AddJwtConfiguration(this IServiceCollection services, IConfiguration configuration)
+{
+    if (services == null) throw new ArgumentNullException(nameof(services));
+    // 从配置中获取对应信息
+    string? issuer = configuration["Jwt:Issuer"]; // 颁发者
+    string? audience = configuration["Jwt:Audience"]; // 受众
+    string? expire = configuration["Jwt:ExpireMinutes"]; // 过期时间
+    string? securityKey = configuration["Jwt:SecurityKey"]; // 安全密钥
+    // 配置信息转换
+    TimeSpan expiration = TimeSpan.FromMinutes(Convert.ToDouble(expire));
+    SecurityKey key = new SymmetricSecurityKey(securityKey == null ? new byte[0] : Encoding.UTF8.GetBytes(securityKey));
+    // Jwt相关配置
+    services.AddAuthorization(options => // 1.配置授权策略
+    {
+        options.AddPolicy("Policy.Default", policy => policy.Requirements.Add(new PolicyRequirement("Default")));
+        options.AddPolicy("Policy.Admin", policy => policy.Requirements.Add(new PolicyRequirement("Admin")));
+    }).AddAuthentication(s =>  // 2.配置身份验证
+    {
+        // 在身份验证成功后，默认使用的身份验证方案
+        s.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        // 在请求处理过程中使用的默认身份验证方案
+        s.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+        // 在发生身份验证挑战时使用的默认身份验证方案
+        s.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    }).AddJwtBearer(s => // 3.配置Jwt Bearer (Token的鉴权逻辑)
+    {
+        // 配置 Jwt Bearer 的验证参数
+        s.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidIssuer = issuer, // 颁发者的有效值
+            ValidAudience = audience, // 受众的有效值
+            IssuerSigningKey = key, // 用于验证签名的密钥
+            ClockSkew = expiration, //允许的时钟偏差
+            ValidateLifetime = true, // 是否验证令牌的生命周期
+            RequireExpirationTime = true, // 是否要求令牌包含有效期
+            ValidateIssuer = true, // 是否验证Issuer
+            ValidateAudience = true, // 是否验证Audience
+            ValidateIssuerSigningKey = true // 是否验证SecurityKey
+        };
+        // 配置 Jwt Bearer 的事件处理器
+        s.Events = new JwtBearerEvents
+        {
+            // 收到消息时的触发的事件
+            OnMessageReceived = context =>
+            {
+                if (context.Request.Method == "GET" && !string.IsNullOrWhiteSpace(context.Request.Query["token"]))
+                    context.Token = context.Request.Query["token"];
+                return Task.CompletedTask;
+            },
+            // 当身份验证失败时触发的事件
+            OnAuthenticationFailed = context =>
+            {
+                // 令牌过期异常
+                if (context.Exception.GetType() == typeof(SecurityTokenExpiredException))
+                {
+                    context.Response.StatusCode = 200;
+                    context.Response.Headers.Append("WWW-AUthenticate", "Bearer error=\"token_refreshed\"");
+                }
+
+                return Task.CompletedTask;
+            }
+        };
+    });
+
+    services.AddSingleton<IAuthorizationHandler, PolicyHandler>();
+}
+```
+
+- **策略声明**
+
+```C#
+public class PolicyRequirement : IAuthorizationRequirement
+{
+    public string RequiredRole { get; }
+
+    public PolicyRequirement(string requiredRole)
+    {
+        RequiredRole = requiredRole;
+    }
+}
+```
+
+### 8.3 Jwt校验策略
+
+```c#
+public class PolicyHandler : AuthorizationHandler<PolicyRequirement>
+{
+    /// <summary>
+    /// 授权方式(cookie, bearer, oauth, openid)
+    /// </summary>
+    public IAuthenticationSchemeProvider schemes { get; set; }
+
+    /// <summary>
+    /// 构造函数
+    /// </summary>
+    /// <param name="schemes"></param>
+    public PolicyHandler(IAuthenticationSchemeProvider schemes)
+    {
+        this.schemes = schemes;
+    }
+
+    protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, PolicyRequirement requirement)
+    {
+        HttpContext? httpContext = context.Resource as HttpContext;
+        var defaultAuthenticate = await schemes.GetDefaultAuthenticateSchemeAsync();
+        if (defaultAuthenticate != null && httpContext != null)
+        {
+            // 验证签发的用户信息
+            var result = await httpContext.AuthenticateAsync(defaultAuthenticate.Name);
+            if (result.Succeeded)
+            {
+                string? roleNameClaim = context.User.Claims.FirstOrDefault(claim => claim.Type == "roleName")?.Value;
+                if (!string.IsNullOrWhiteSpace(roleNameClaim) && roleNameClaim == requirement.RequiredRole || requirement.RequiredRole == "Default")
+                    context.Succeed(requirement);
+                else
+                {
+                    if (!httpContext.Response.Headers.ContainsKey("WWW-Authenticate"))
+                    {
+                        httpContext.Response.Headers.Append("WWW-Authenticate", "Bearer error=\"invalid_permission\"");
+                    }
+                    context.Fail();
+                }
+            }
+            else
+            {
+                httpContext.Response.Headers.Append("WWW-Authenticate", "Bearer error=\"invalid_token\"");
+                context.Fail();
+            }
+        }
+    }
+}
+```
+
+### 8.4 梳理
+
+​	实际上整个流程就是，首先利用登录的用户获取其相关信息，基于此和配置文件创建Token；在Jwt的配置中设置授权策略，同时说明对于token的验证方式；通过实现Handler，自定义当识别到接口的授权时，对对应方案进行自定义校验。
