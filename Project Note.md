@@ -329,6 +329,8 @@ https://github.com/yitter/IdGenerator?tab=readme-ov-file
 
 ![](C:\Files\Notes\Images\ProjectNote-2.png)
 
+[ASP.NET Core 实战：基于 Jwt Token 的权限控制全揭露 - 掘金 (juejin.cn)](https://juejin.cn/post/6844903769457557512?share_token=e15b4494-5777-44d4-bf9a-b9867554c8c0)
+
 ### 8.1 生成Token令牌
 
 $$
@@ -558,3 +560,12 @@ public class PolicyHandler : AuthorizationHandler<PolicyRequirement>
 ### 8.4 梳理
 
 ​	实际上整个流程就是，首先利用登录的用户获取其相关信息，基于此和配置文件创建Token；在Jwt的配置中设置授权策略，同时说明对于token的验证方式；通过实现Handler，自定义当识别到接口的授权时，对对应方案进行自定义校验。
+
+## 9.数据库时区问题
+
+时间数据插入数据库由于时区问题会自动少8个小时
+
+```postgresql
+set timezone='Asia/Shanghai';
+```
+
