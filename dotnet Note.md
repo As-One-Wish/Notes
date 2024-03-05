@@ -1,4 +1,4 @@
-# .NET 概念
+# 一、.NET 概念
 
 - **.NET Framework**：用于构建Windows桌面应用程序、ASP.NET Web应用程序和其他类型的应用程序，仅可在Windows上运行，并且不支持跨平台开发
 
@@ -7,9 +7,9 @@
 
 - **.NET Standard**：是一个规范，定义了一组公共API，允许开发人员编写可在不同的.NET实现中共享的代码，声明标准，但是具体的实现交由不同的平台各自实现
 
-# 异步编程
+# 二、异步编程
 
-## **异步方法**：用`async`关键字修饰的方法
+## 1.**异步方法**：用`async`关键字修饰的方法
 
 > - 异步方法的返回值一般是`Task<T>`，`T`是真正的返回值类型，例如`Task<int>`。惯例，异步方法名字以`Async` 结尾
 > - 即使方法没有返回值，也最好把返回值声明为非泛型的`Task`
@@ -49,7 +49,7 @@ namespace Asynchronous1
 }
 ```
 
-## **`async`、`await`原理**
+## 2.**`async`、`await`原理**
 
 ​	带有`async`的方法会被C#编译器编译成一个类，其中主要根据`await`调用来进行状态的切分（参考状态机），对`async`方法的调用会被拆分为对`MoveNext`的调用。其工作原理可以概括一下几个步骤：
 
@@ -86,7 +86,7 @@ namespace AsyncPrinciple
 }
 ```
 
-## **异步中的线程切换**
+## 3.**异步中的线程切换**
 
 ​	`await`调用的等待期间，`.NET`会把当前的线程返回给线程池，等异步方法调用执行完毕后，框架会从线程池再取出来一个线程执行后续的代码；到要等待的时候，如果发现已经执行结束了，那就没必要再切换线程了，剩下的代码就继续在之前的线程上继续执行了。
 
@@ -158,9 +158,9 @@ namespace NoneThread
 }
 ```
 
-## **缺少`async`修饰的方法**
+## 4.**缺少`async`修饰的方法**
 
-> - `async`方法有一定的缺点：异步方法会生成一个类，运行效率没有普通犯法高；可能会占用非常多的线程
+> - `async`方法有一定的缺点：异步方法会生成一个类，运行效率没有普通方法高；可能会占用非常多的线程
 > - 返回`Task`的不一定都要标注`async`，标注`async`只是可以更方便的`await`
 > - 如果一个异步方法只是对别的异步方法调用的转发，并没有太多复杂的逻辑（比如等待`A`的结果，再调用`B`；把`A`调用的返回值拿到内部做一些处理再返回），那么就可以去掉`async`关键字。
 
@@ -197,165 +197,38 @@ namespace NoneAsync
 }
 ```
 
-## **`CancellationToken`**
+## 5.多线程
 
-​	传播有关应取消操作的通知
+- **进程：**一般指程序中运行程序，实际作用是为程序在执行过程中创建好所需的环境和资源
+- **线程：**是进程的一个实体，是CPU用来调度的最小单元，一个进程可以拥有多个线程
+- **单线程：**进程中只有一个线程，只执行一个线程
+- **多线程：**同一时刻，可以执行多个线程
+- **并发：**一段时间内，同时做多件事情
 
-```c#
-namespace CancellationTokenTest
-{
-    internal class CancellationTokenTest
-    {
-        /*static async Task Main(string[] args)
-        {
-            CancellationTokenSource cts = new CancellationTokenSource();
-            cts.CancelAfter(5000);
-            // await DownloadHtmlAsync("https://youzack.com", 100);
-            CancellationToken cToken = cts.Token;
-            //await DownloadHtml1Async("https://youzack.com", 100, cToken);
-            await DownloadHtml2Async("https://youzack.com", 100, cToken);
-        }*/
-        static void Main(string[] args)
-        {
-            CancellationTokenSource cts = new CancellationTokenSource();
-            CancellationToken cToken = cts.Token;
-            DownloadHtml2Async("https://youzack.com", 100, cToken);
-            // 根据用户输入进行中止
-            while (Console.ReadLine() != "q") { }
-            cts.Cancel();
-            Console.ReadLine();
-        }
-        // 正常下载
-        static async Task DownloadHtmlAsync(string url, int n)
-        {
-            using (HttpClient client = new HttpClient())
-            {
-                for (int i = 0; i < n; ++i)
-                {
-                    string html_content = await client.GetStringAsync(url);
-                    Console.WriteLine($"{DateTime.Now}:{html_content}");
-                }
-            }
-        }
-        // 添加定时取消下载
-        static async Task DownloadHtml1Async(string url, int n, CancellationToken cancellationToken)
-        {
-            using (HttpClient client = new HttpClient())
-            {
-                for (int i = 0; i < n; ++i)
-                {
-                    string html_content = await client.GetStringAsync(url);
-                    Console.WriteLine($"{DateTime.Now}:{html_content}");
-                    /*if (cancellationToken.IsCancellationRequested)
-                    {
-                        Console.WriteLine("请求被取消！");
-                        break;
-                    }*/
-                    // 抛出异常，需要手动处理异常，取消不及时
-                    cancellationToken.ThrowIfCancellationRequested();
-                }
-            }
-        }
-		// 调用自含CancellationToken参数的函数
-        static async Task DownloadHtml2Async(string url, int n, CancellationToken cancellationToken)
-        {
-            using (HttpClient client = new HttpClient())
-            {
-                for (int i = 0; i < n; ++i)
-                {
-                    // 交由GetAsync进行，取消及时
-                    var resp = await client.GetAsync(url, cancellationToken);
-                    string html_content = await resp.Content.ReadAsStringAsync();
-                    Console.WriteLine($"{DateTime.Now}:{html_content}");
-                }
-            }
-        }
-    }
-}
-```
+> 并发是`同一时刻，只执行一个线程`，但是多个线程被快速的交替执行，在宏观上有多线程同时执行的假效果，但是在微观上只是把时间分成若干顿，使多个线程快速的交替执行
 
-## **`WhenAll`** 和 **`WhenAny`**
+- **并行：**同一时刻，做多件事情
 
-​	顾名思义，`WhenAll`是提供的任务全部完成后视为该任务完成，所有任务的执行不会按照特定的顺序执行，而是会并发的执行，即所有的任务同时开始，最后返回的任务数组是有一定顺序的；`WheAny`是提供的任务中任何一个完成都视为该任务完成，其中任务一样是并发执行，最后返回一个完成的任务表示此任务的完成。
+> 同一时刻，有多个线程在多个处理器上同时执行，无论从宏观还是微观来看，这些线程都是一起执行的
 
-```C#
-namespace WhenAllTest
-{
-    internal class WhenAllTest
-    {
-        static async Task Main(string[] args)
-        {
-            // 获取当前路径下的所有文件
-            string[] files = Directory.GetFiles(@"D:\Files\Test");
-            // 初始化一个Task数组，其中每一个Task的返回值是int
-            Task<int>[] countTasks = new Task<int>[files.Length];
-            for(int i=0;i<files.Length; ++i)
-            {
-                string pre_file_name = files[i];
-                // 依次对每个文件创建Task，存入countTasks数组
-                Task<int> preTask = GetCharsCount(pre_file_name);
-                countTasks[i] = preTask;
-            }
-            // 利用WhenAll，待全部完成后视为任务完成
-            int[] counts = await Task.WhenAll(countTasks);
-            int sum = counts.Sum();
-            Console.WriteLine(sum);
-        }
+>单处理器下，多线程一定是并发执行的；
+>
+>多处理器下，当线程数小于等于处理器个数时，多线程是并行的；反之可能是并行或并发
 
-        static async Task<int> GetCharsCount(string file_name)
-        {
-            string chars = await File.ReadAllTextAsync(file_name);
-            Console.WriteLine($"{file_name}的字符个数为:{chars.Length}");
-            return chars.Length;
-        }
-    }
-}
-```
+- **同步：**等待前一个任务结束后，再执行下一个任务，无并发或者并行概念
+- **异步：**多个任务，同时执行
+- **多线程同步：**当有一个线程对内存某一块地址操作时，不允许其他线程对这个内存地址进行操作，直到该线程操作完成
+- **并发三大特性**
+  - **可见性：**当多个线程访问同一个变量时，一个线程修改了这个变量值，其他线程能够立刻看到修改后的值
+  - **原子性：**即一个操作或者多个操作，要么全部执行(执行过程中不被任何因素打断)，要么都不执行
+  - **有序性：**即程序的执行按照代码的先后顺序执行
+- **死锁**
+  - **互斥性：**当一个资源被线程使用的时候，别的线程不能使用
+  - **不可抢占性：**资源请求者不可强制从资源拥有者中抢夺资源
+  - **占有且等待性：**资源请求者在等待其他资源时，保持对原有资源的占有
+  - **循环等待性：**线程1等待线程2占有的资源，线程2等待线程1占有的资源
 
-## Tips
-
-> - `async`是提示编译器为异步方法中的`await`代码进行分段处理的，而一个异步方法是否修饰了`async`对于方法的调用者来讲没区别，因此对于接口中的方法或者抽象方法不能修饰为`async`
-> - 异步与`yield`：`yield return`不仅能够简化数据的返回，而且可以让数据处理流水线化，提升性能
-
-```c#
-namespace YieldTest
-{
-    internal class Program
-    {
-        static async Task Main(string[] args)
-        {
-            foreach (var s in Test1()) {
-                Console.WriteLine(s);
-            }
-            await foreach (var s in Test2()) {
-                Console.WriteLine(s);
-            }
-        }
-
-        static IEnumerable<string> Test1()
-        {
-            List<string> list = new List<string>();
-            list.Add("hello");
-            list.Add("hwj");
-            list.Add("good morning");
-            return list;
-        }
-
-        // 旧版C#中,async方法中不能用yield:从C# 8.0开始,把返回值声明为IAsyncEnumerable(不要带Task),
-        // 然后遍历的时候用await foreach()即可
-        static async IAsyncEnumerable<string> Test2()
-        {
-            yield return "hello";
-            yield return "hwj";
-            yield return "good morning";
-        }
-    }
-}
-```
-
-
-
-# LINQ
+# 三、LINQ
 
  基于[委托](D:\Files\Note\C# Note.md)和[Lambda](D:\Files\Note\C# Note.md)
 
@@ -469,13 +342,13 @@ static void init()
 }
 ```
 
-# 依赖注入
+# 四、依赖注入
 
 > 依赖注入（`DI`）是控制反转（`IOC`）思想的实现方式
 >
 > 依赖注入简化模块的组装过程，降低模块之间的耦合度
 
-## 概念
+## 1.概念
 
 - **服务**：对象
 - **注册服务**：对象要预先注册，后续才能拿到
@@ -487,7 +360,7 @@ static void init()
 >
 > .NET控制反转组件取名为`DependencyInjection`,但它包含ServiceLocator的功能
 
-## 生命周期
+## 2.生命周期
 
 > 不要在长生命周期的对象中引用比它短的生命周期的对象，例如在Singleton对象中引用Transient对象
 
@@ -530,7 +403,7 @@ static void Main(string[] args)
 }
 ```
 
-## 服务定位器
+## 3.服务定位器
 
 ```c#
 static void Main(string[] args)
@@ -570,7 +443,7 @@ static void Main(string[] args)
 }
 ```
 
-## .NET依赖注入
+## 4..NET依赖注入
 
 **依赖注入具有“传染性”**
 
@@ -687,93 +560,54 @@ static void Main(string[] args)
 
 ​	综上，依赖注入实际上可以认为，我使用一个类时，不管这个类是什么样子，我就告诉框架我要这个类，我不需要自己new就可以使用，这样的好处是：1、如果声明对象的话，可能其构造函数的参数很难传入（比如是其他的类）；2、如果服务有修改，比如某接口的实现方法改了，我只需要在注册时修改注册函数，而不需要去修改业务代码
 
-# 配置系统
+# 五、GC
 
-## 配置读取
+垃圾回收机制，为了高效、便捷和安全地管理内存，C#中采用了自动垃圾回收机制，由系统代理内存管理，从而提高开发效率和避免内存泄漏等问题。
 
-**1、直接读取**
+- **标记-清理：**从根对象开始，根据对象的引用关系递归标记可达对象，在清理阶段则对不可达对象进行内存清理，某些GC还会在清理阶段进行内存压缩从而减少内存碎片化。
+- **分代管理：**在托管堆上根据所创建对象的生命周期进行分类，刚创建的对象被称为“第一代”，在上一次“标记-清理”阶段存活下来的对象会被分类为“第二代，以此类推，分代管理的目的是为了`控制对象进行“标记-清理”的频率从而提高GC的效率`。
 
-> 需要安装：Microsoft.Extensions.Configuration  –基础包
->
-> ​		Microsoft.Extensions.Configuration.Json	–Json对应
+# 六、委托&事件
 
-```c#
-ConfigurationBuilder configBuilder = new ConfigurationBuilder();
-configBuilder.AddJsonFile("config.json", optional: false, reloadOnChange: true);
-IConfigurationRoot configRoot = configBuilder.Build();
+## 1.委托
 
-string? name = configRoot["name"];
-string? addr = configRoot.GetSection("proxy:address").Value;
-string? addr = configRoot["proxy:address"];
-```
+是对指定签名的函数的引用，通过委托可以实现将函数作为参数传递或者间接调用函数，委托是**类型安全**的，仅指向与其声明时指定签名相匹配的函数。
 
-**2、绑定读取**
+委托可以分为单播委托和多播委托，二者的区别在于是对单个方法还是一组方法的引用
 
-> 需要安装：Microsoft.Extensions.Configuration.Binder
+- **多播委托**：实际上是一个类实例，其中定义了一个函数引用列表用于存储订阅的函数。当调用多播委托时，将由CLR来遍历该函数引用列表，并按照订阅顺序依次调用函数。
 
-​	将对应节点绑定为一个对象，对象要提前声明
+## 2.事件
 
-```c#
-Proxy proxy = configRoot.GetSection("proxy").Get<Proxy>();
-Console.WriteLine($"addr:{proxy.Address}, mask:{proxy.Netmask}");
-```
+一种特殊的多播委托，其相比于普通的多播委托更加安全，事件将多播委托的调用权限隔离在其所在类的内部，并对外部关闭了直接通过赋值符号"="修改多播委托实例的入口，使得外部调用者仅能够进行基本的函数订阅和取消订阅的操作。
 
-**3、选项方式读取**(和DI结合)
+# 七、重载&重写
 
-> 需要安装：1、2中的 + Microsoft.Extensions.Options
+## 1.重载
 
-​	读取配置的时候，DI要声明`IOptions<T>`、`IOptionsMonitor<T>`、`IOptionsSnapshot<T>`等类型
+`编译时多态`，重载函数的名称相同但参数列表不同，在调用时编译器会自动根据传递的参数列表适配指定形式的重载函数。
 
->- IOptions\<T\>:不会读取新的值
->- IOptionsMonitor\<T\>：会立即更新新的值
->- IOptionsSnapshot\<T>：会在一个范围内保持一致
+## 2.重写
 
-```c#
-/*****主函数中使用部分*****/
-// DI 服务注册
-ServiceCollection services = new ServiceCollection();
-services.AddScoped<TestController>();
+`运行时多态`，子类重写父类的方法，在调用时根据实例对象的类型而适配重写函数。
 
-// configurationRoot声明
-ConfigurationBuilder configBuilder = new ConfigurationBuilder();
-configBuilder.AddJsonFile("config.json", optional: false, reloadOnChange: true);
-IConfigurationRoot configRoot = configBuilder.Build();
+- 派生类可以重写的基类方法
+  - 基类中使用`virtual`关键字进行限定的方法(简称"虚方法")
+  - 在派生类中使用new关键字对与基类同名的方法进行重写(简称"隐藏方法")
+  - 基类是抽象类，抽象类中使用`abstract`关键字进行限定的方法(简称"抽象方法")
+- `virtual`关键字
 
-/*
- * 注册Options服务，并将应用程序配置根中的对应配置项绑定到Config类型的实例中
- * 在应用程序中需要使用这些配置数据时，可以直接将Config类型的实例注入到其他组件中，从而方便地获取配置信息
- */
-services.AddOptions().Configure<Config>(e=>configRoot.Bind(e));
+​	用于定义虚方法，基类中的virtual方法可以被直接或间接派生类`选择性`重写
 
-using(var sp = services.BuildServiceProvider())
-{
-    var c = sp.GetRequiredService<TestController>();
-    c.Test();
-}
+- `new`关键字
 
-/*****TestController*****/
-public class TestController
-{
-    private readonly IOptionsSnapshot<Config> optConfig;
+​	用于隐藏方法(派生类对基类隐藏同名方法)，直观的区别就在于声明为基类而实例化为派生类的对象将无法调用派生类的隐藏方法，但是声明与实例化均为派生类的对象则可以调用派生类的隐藏方法
 
-    public TestController(IOptionsSnapshot<Config> optConfig)
-    {
-        this.optConfig = optConfig;
-    }
-    public void Test()
-    {
-        var config = optConfig.Value;
-        Console.WriteLine($"Name:{config.Name},Age:{config.Age}\naddr:{config.proxy!.Address}\nmask:{config.proxy.Netmask}");
-    }
-}
-```
+- `abstract`关键字
 
-## 其他配置
+​	用于声明抽象类和抽象方法，且抽象方法仅存在于抽象类中，直接派生类被要求必须完成积累中抽象方法的定义，除非直接派生类也为抽象类
 
-**1、命令行方式**
+- `seald`关键字
 
-> 需要安装：Microsoft.Extensions.Configuration.CommandLine
+​	用于声明密封类和密封方法，密封类无法被继承，密封方法无法被重写
 
-**2、环境变量方式**
-
-> 需要安装：Microsoft.Extensions.Configuration.EnvironmentVariables
