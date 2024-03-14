@@ -1,6 +1,6 @@
 # 一、Vue前端部分
 
-## 1.项目搭建
+## 1.基础项目搭建
 
 - 通过`vue-cli`进行创建
 
@@ -27,7 +27,29 @@ npm init vite@latest
 
 现代化的前端构建工具，会创建一个基本的项目结构，并安装Vite相关的依赖。
 
-## 2.配置`eslint`
+## 2.Vben Admin模板项目搭建
+
+- 获取项目代码
+
+```shell
+git clone https://github.com/anncwb/vue-vben-admin.git
+```
+
+- 安装依赖
+
+```shell
+cd vue-vben-admin
+git checkout thin # Important！！
+pnpm install
+```
+
+- 运行
+
+```shell
+pnpm serve
+```
+
+## 3.配置`eslint`
 
 ```shell
 # pnpm创建eslint配置
@@ -75,54 +97,93 @@ editor.formatOnSave": true,
 
 ```json
 module.exports = {
-	'env': {
-		'es2021': true,
-		'node': true
+	env: {
+		es2021: true,
+		node: true,
+		browser: true
 	},
-	'extends': [
+	extends: [
 		'eslint:recommended',
 		'plugin:@typescript-eslint/recommended',
 		'plugin:vue/vue3-essential'
 	],
-	'overrides': [
+	overrides: [
 		{
-			'env': {
-				'node': true
+			env: {
+				node: true
 			},
-			'files': [
-				'.eslintrc.{js,cjs}'
-			],
-			'parserOptions': {
-				'sourceType': 'script'
+			files: ['.eslintrc.{js,cjs}'],
+			parserOptions: {
+				sourceType: 'script'
 			}
 		}
 	],
-	'parserOptions': {
-		'ecmaVersion': 'latest',
-		'parser': '@typescript-eslint/parser',
-		'sourceType': 'module'
+	parserOptions: {
+		ecmaVersion: 'latest',
+		parser: '@typescript-eslint/parser',
+		sourceType: 'module',
+		ecmaFeatures: {
+			jsx: true
+		}
 	},
-	'plugins': [
-		'@typescript-eslint',
-		'vue'
-	],
-	'rules': {
+	plugins: ['@typescript-eslint', 'vue'],
+	rules: {
 		// 缩进类型
-		'indent': ['error', 'tab'],
-		// 行结束符类型 unix-LF
-		'linebreak-style': ['error', 'unix'],
+		indent: ['error', 'tab'],
+		// 行结束符类型 windows-CRLF
+		'linebreak-style': ['error', 'windows'],
 		// 引号类型
-		'quotes': ['error', 'single'],
+		quotes: ['error', 'single'],
 		// 结尾分号
-		'semi': ['error','never'],
+		semi: ['error', 'never'],
 		// 数组和对象键值对最后一个逗号
 		'comma-dangle': ['error', 'never'],
 		// 数组对象之间的空格
 		'array-bracket-spacing': ['error', 'never'],
 		// 中缀操作符之间是否需要空格
-		'space-infix-ops': true,
+		'space-infix-ops': ['error'],
 		// 对象字面量中冒号的前后空格
-		"key-spacing": [0, { "beforeColon": false, "afterColon": true }],
+		'key-spacing': ['error', { beforeColon: false, afterColon: true }],
+		// clear eslintvue/comment-directive 错误解决
+		'vue/comment-directive': 'off',
+		// 设置html缩进为两个
+		'vue/html-indent': ['error', 'tab'],
+		// 配置ts参数声明类型格式冒号前后空格
+		'@typescript-eslint/type-annotation-spacing': [
+			'error',
+			{
+				before: false,
+				after: true,
+				overrides: {
+					arrow: { before: true, after: true }
+				}
+			}
+		],
+		// 不能有多余的空格
+		'no-multi-spaces': ['error'],
+		// 不能有不规则的空格
+		'no-irregular-whitespace': ['error'],
+		//生成器函数*的前后空格
+		'generator-star-spacing': ['error'],
+		// 关闭 ts any 类型警告
+		'@typescript-eslint/no-explicit-any': ['off'],
+		// 允许 {} 的使用
+		'@typescript-eslint/ban-types': [
+			'error',
+			{
+				extendDefaults: true,
+				types: {
+					'{}': false,
+					Object: false
+				}
+			}
+		],
+		// 关闭禁用未声明的变量
+		'no-undef': 'off',
+		// 关闭组件命名规则
+		'vue/multi-word-component-names': 'off',
+		// 非空代码块
+		'no-empty': 'off'
 	}
 }
 
@@ -130,7 +191,80 @@ module.exports = {
 
 更多详细设置：https://blog.csdn.net/Snow_GX/article/details/92089358
 
-## 3.引入`Ant Design Vue`(按需导入)
+## 4.tsconfig.json配置
+
+```json
+{
+    "compilerOptions": {
+    // 设置编译后的 JavaScript 代码目标版本为 ESNext
+    "target": "ESNext",
+    // 指定生成的模块系统类型为 ESNext 模块
+    "module": "ESNext",
+    // 指定模块解析策略为 Node.js 模块解析
+    "moduleResolution": "Node",
+    // 不从默认库文件（lib.d.ts）中排除任何类型
+    "noLib": false,
+    // 开启所有严格的类型检查选项
+    "strict": true,
+    // 允许编译 JavaScript 文件
+    "allowJs": true,
+    // 允许导入 JSON 文件作为模块
+    "resolveJsonModule": true,
+    // 允许导入没有默认导出的模块时，使用默认导出
+    "allowSyntheticDefaultImports": true,
+    // 生成源映射文件
+    "sourceMap": true,
+    // 启用 ES 模块导入和导出的Interop
+    "esModuleInterop": true,
+    // 检查未使用的局部变量
+    "noUnusedParameters": true,
+    // 检查未使用的函数参数
+    "noUnusedLocals": true,
+    // 跳过对声明文件的检查
+    "skipLibCheck": true,
+    // 移除编译后的 JavaScript 文件中的注释
+    "removeComments": true,
+    // 不允许隐式的any类型
+    "noImplicitAny": false,
+    // 保留JSX代码，不进行转换
+    "jsx": "preserve",
+    // 关闭对函数参数的严格检测
+    "strictFunctionTypes": false,
+    // 启用实验性的装饰器支持
+    "experimentalDecorators": true,
+    "baseUrl": ".",
+    "declaration": false,
+    "types": [
+      "vite/client"
+    ],
+    "paths": {
+      "@/*": [
+        "src/*"
+      ],
+      "#/*": [
+        "types/*"
+      ]
+    }
+  },
+  "include": [
+    "tests/**/*.ts",
+    "src/**/*.ts",
+    "src/**/*.d.ts",
+    "src/**/*.tsx",
+    "src/**/*.vue",
+    "types/**/*.d.ts",
+    "types/**/*.ts",
+    "build/**/*.ts",
+    "build/**/*.d.ts",
+    "mock/**/*.ts",
+    "vite.config.ts"
+  ],
+  "exclude": ["node_modules", "tests/server/**/*.ts", "dist", "**/*.js"]
+}
+
+```
+
+## 5.引入`Ant Design Vue`(按需导入)
 
 ```shell
 # 安装依赖
@@ -155,6 +289,101 @@ export default defineConfig({
   ],
 })
 ```
+
+## 6.Hooks
+
+基于组合式API，允许站在组件的逻辑代码中更好的组织和复用代码；本质上是一组可复用的函数，可以钩入Vue组件的生命周期。
+
+**定义：**
+
+```ts
+import { ref, onMounted, onUnmounted } from 'vue';
+
+export function useMousePosition() {
+  const x = ref(0);
+  const y = ref(0);
+
+  function updatePosition(event) {
+    x.value = event.clientX;
+    y.value = event.clientY;
+  }
+
+  onMounted(() => {
+    window.addEventListener('mousemove', updatePosition);
+  });
+
+  onUnmounted(() => {
+    window.removeEventListener('mousemove', updatePosition);
+  });
+
+  return { x, y };
+}
+```
+
+**使用：**
+
+```vue
+<template>
+  <div>
+    Mouse position: X={{ x }}, Y={{ y }}
+  </div>
+</template>
+
+<script setup>
+import { useMousePosition } from './useMousePosition';
+
+const { x, y } = useMousePosition();
+</script>
+```
+
+## 7.路径别名
+
+`vite.config.ts`
+
+```ts
+export default defineConfig({
+	plugins: [
+		vue(),
+		...
+	],
+	resolve: {
+		alias: {
+			'@': resolve(__dirname, 'src'),
+			'#': resolve(__dirname, 'types')
+		}
+	}
+})
+```
+
+`tsconfig.json`
+
+```json
+{  
+  "compilerOptions": {
+    "baseUrl": ".", // 必须
+    "paths": {
+      "@/*": ["src/*"],
+      "#/*": ["types/*"]
+    }
+  }
+}
+```
+
+## 8.import.meta.glob
+
+vite独有的功能，利用`import.meta.glob()`直接导入所有模块，但使用前要进行类型定义
+
+**`tsconfig.json`**
+
+```json
+{
+  "compilerOptions": {
+    "types": ["vite/client"]
+  }
+}
+```
+
+
 
 # 二、.NET后端部分
 
@@ -569,3 +798,4 @@ public class PolicyHandler : AuthorizationHandler<PolicyRequirement>
 set timezone='Asia/Shanghai';
 ```
 
+## 10.多租户
