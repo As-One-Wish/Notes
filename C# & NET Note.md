@@ -41,11 +41,122 @@
   - 在与非托管代码交互的时候，C#代码可能需要使用一些特殊的机制（如Interop）来处理非托管类型。
   - **枚举**;**指针**;**不含引用类型及托管类型成员（字段、自动实现get访问器的属性）的结构**
 
-# 三、异步编程
+## 3、AppDomain-AppContext-Application-Assembly
+
+- `AppDomain`
+  - 是.NET运行时中的一个隔离容器，用于加载、执行和卸载托管代码
+  - 提供了一种在同一个进程中隔离和管理不同部分的机制，增强了应用程序的安全性、稳定性和可维护性
+  - 是执行代码的环境，每个.NET程序至少有一个`AppDomain`
+- `AppContext`
+  - 是.NET Framework中的一个类，用于提供应用程序级别的配置和上下文信息
+  - 提供了一种获取和设置应用程序级别配置信息的方式，例如线程池大小、语言环境等
+  - 提供了一种管理应用程序和上下文信息的机制，与应用程序的配置和环境相关
+- `Application`
+  - 是.NET框架中的一个类，用于管理正在运行的应用程序的实例
+  - 提供了一种访问应用程序级别信息和功能的方式，例如管理应用程序的生命周期、处理异常等
+  - 通常与GUi应用程序(如Windows Forms、WPF等)相关联，提供了一些用于控制应用程序行为的方法和事件
+- `Assembly`
+  - 一种部署单元，包含了执行代码、资源和元数据；通常以DLL或EXE文件形式存在
+  - 代码的物理单元，可以被加载到应用程序域中并执行；一个应用程序域可以加载和执行多个程序集
+
+
+> ​	`AppDomain`和`AppContext`都是用于管理应用程序的执行环境和上下文，但它们的作用略有不同。`AppDomain`主要用于隔离和执行托管代码，`AppContext`则用于管理应用程序级别的配置信息
+>
+> ​	`Application`类提供了一些用于管理正在运行的应用程序实例的方法和属性，通常位于GUI应用程序中，但与`AppDomain`和`AppContext`相比，它更多的关注应用程序本身的生命周期管理
+
+# 三、配置
+
+​	.NET中的配置是使用一个或多个[配置提供程序](#configProv)执行的。配置提供程序使用各种配置源从键值对读取配置数据。
+
+​	给定一个或多个配置源，`IConfiguration`类型提供配置数据的统一视图
+
+![](C:\Files\Notes\Images\C#&NET-1.png)
+
+## 1.<span id="configProv">配置提供程序</span>
+
+​	是一种机制，用于从不同的配置源中读取应用程序的配置信息并将其提供给应用程序。`ConfigurationBuilder`类用于构建配置对象，并且可以添加不同类型的配置提供程序来读取配置：
+
+- `AddJsonFile`--Json文件
+
+```c#
+IConfigurationBuilder cfgBuilder = new ConfigurationBuilder()
+    .SetBasePath(Directory.GetCurrentDirectory()) // 设置配置文件基本路径
+  	// optional: 配置文件是否是可选(不存在是否引发异常)
+  	// reloadOnChange: 配置文件修改时是否重新加载配置
+    .AddJsonFile("appsettings.json", optional: true, reloadOnChange:true);
+
+IConfiguration configuration = cfgBuilder.Build();
+```
+
+- `AddXmlFile`--Xml文件
+
+```c#
+IConfigurationBuilder cfgBuilder = new ConfigurationBuilder()
+    .SetBasePath(Directory.GetCurrentDirectory())
+    .AddXmlFile("appsettings.xml", optional: true, reloadOnChange:true);
+
+IConfiguration configuration = cfgBuilder.Build();
+```
+
+- `AddEnvironmentVariales`--环境变量
+
+```c#
+IConfigurationBuilder cfgBuilder = new ConfigurationBuilder()
+    .SetBasePath(Directory.GetCurrentDirectory())
+    .AddEnvironmentVariables();
+
+IConfiguration configuration = cfgBuilder.Build();
+```
+
+- `AddCommandLine`--命令行参数
+
+```c#
+IConfigurationBuilder cfgBuilder = new ConfigurationBuilder()
+    .SetBasePath(Directory.GetCurrentDirectory())
+    .AddCommandLine(args);
+
+IConfiguration configuration = cfgBuilder.Build();
+```
+
+## 2.选项模式
+
+​	选项模式使用类来提供对相关设置组的[强类型访问](#stronglyTypedAccess)。当配置设置[由方案隔离到单独的类](#schemeToClass)时，应用遵循两个重要软件工程原则：
+
+- **接口分隔原则(ISP)或封装**:依赖于配置设置的方案(类)仅依赖于其使用的配置设置
+- **关注点分离**:应用的不同部件的设置不彼此依赖或相互耦合
+
+​	选项模式可以通过`IOptions<TOptions>`接口实现，其中泛型类型参数`TOptions`被约束为`class`；
+
+​	在使用选项模式时，选项类：
+
+- 必须是非抽象类，有一个公共无参数构造函数
+- 包含要绑定的公共读写属性(不绑定字段)
+
+```c#
+public record HttpApiSettings
+{
+    /// <summary>
+    /// BaseUrls字典
+    /// </summary>
+    public Dictionary<string, string> BaseUrls { get; set; }
+    /// <summary>
+    /// 过期时间
+    /// </summary>
+    public int GlobalOverTime { get; set; } = int.MinValue;
+}
+```
+
+> - <span id="stronglyTypedAccess">`强类型访问`</span>(Strongly Typed Access):指通过在编译时制定类型来访问数据或对象的方式
+>
+>   其优点是编译器可以在编译时对类型进行检查，确保类型的正确性和一致性，从而提高了代码的安全性和可靠性
+>
+> - <span id="schemeToClass">`由方案隔离到单独的类`</span>:将应用程序的配置设置从原始的配置文件中提取，并将其映射到一个单独的.NET类中
+
+# 四、异步编程
 
 ## 1.**异步方法**：用`async`关键字修饰的方法
 
-> - 异步方法的返回值一般是`Task<T>`，`T`是真正的返回值类型，例如`Task<int>`。惯例，异步方法名字以`Async` 结尾
+> - 异步方法的返回值一般是`Task<T>`，`T`是真正的返回值类型，例如`Task<int>`。惯例，异步方法名字以`Async`结尾
 > - 即使方法没有返回值，也最好把返回值声明为非泛型的`Task`
 > - 调用泛型方法时，一般在方法前面加上`await`，这样拿到的返回值就是泛型指定的`T`类型
 > - 异步方法的传染性：一个方法中如果有`wait`调用，则这个方法也必须修饰为`async`
@@ -262,7 +373,7 @@ namespace NoneAsync
   - **占有且等待性：**资源请求者在等待其他资源时，保持对原有资源的占有
   - **循环等待性：**线程1等待线程2占有的资源，线程2等待线程1占有的资源
 
-# 三、LINQ
+# 五、LINQ
 
  基于[委托](D:\Files\Note\C# Note.md)和[Lambda](D:\Files\Note\C# Note.md)
 
@@ -376,7 +487,7 @@ static void init()
 }
 ```
 
-# 四、依赖注入
+# 六、依赖注入
 
 > 依赖注入（`DI`）是控制反转（`IOC`）思想的实现方式
 >
@@ -486,122 +597,16 @@ static void Main(string[] args)
 
 .NET的DI默认是构造函数注入
 
-**简单使用**
-
-通过几个类来使用依赖注入
-
-```c#
-class Controller
-{
-    private readonly ILog log;
-    private readonly IStorage storage;
-
-    public Controller(ILog log, IStorage storage)
-    {
-        this.log = log;
-        this.storage = storage;
-    }
-
-    public void Test()
-    {
-        this.log.Log("开始上传");
-        this.storage.Save(".NET的依赖注入", "test.txt");
-        this.log.Log("上传完毕");
-    }
-}
-```
-
-```c#
-interface ILog
-{
-    public void Log(string message);
-}
-
-class LogImpl : ILog
-{
-    public void Log(string message)
-    {
-        Console.WriteLine($"日志:{message}");
-    }
-}
-```
-
-```c#
-interface IConfig
-{
-    public string GetValue(string name);
-}
-
-class ConfigImpl : IConfig
-{
-    public string GetValue(string name)
-    {
-        return "hello" + name;
-    }
-}
-class DBConfigImpl : IConfig
-{
-    public string GetValue(string name)
-    {
-        return $"Db helllo {name}";
-    }
-}
-```
-
-```c#
-interface IStorage
-{
-    public void Save(string content, string name);
-}
-
-class StorageImpl : IStorage
-{
-    private readonly IConfig config;
-
-    public StorageImpl(IConfig config)
-    {
-        this.config = config;
-    }
-
-    public void Save(string content, string name)
-    {
-        string server = config.GetValue("server");
-        Console.WriteLine($"向服务器{server}的文件({name})上传了\"{content}\"");
-    }
-}
-```
-
-**主函数中服务注册及使用**
-
-```c#
-static void Main(string[] args)
-{
-    ServiceCollection services = new ServiceCollection();
-    services.AddScoped<Controller>();
-    services.AddScoped<ILog, LogImpl>();
-    services.AddScoped<IStorage, StorageImpl>();
-    //services.AddScoped<IConfig, ConfigImpl>();
-    services.AddScoped<IConfig, DBConfigImpl>();
-
-    using (ServiceProvider sp = services.BuildServiceProvider())
-    {
-        Controller c = sp.GetRequiredService<Controller>();
-        c.Test();
-    }
-    Console.ReadKey();
-}
-```
-
 ​	综上，依赖注入实际上可以认为，我使用一个类时，不管这个类是什么样子，我就告诉框架我要这个类，我不需要自己new就可以使用，这样的好处是：1、如果声明对象的话，可能其构造函数的参数很难传入（比如是其他的类）；2、如果服务有修改，比如某接口的实现方法改了，我只需要在注册时修改注册函数，而不需要去修改业务代码
 
-# 五、GC
+# 七、GC
 
 垃圾回收机制，为了高效、便捷和安全地管理内存，C#中采用了自动垃圾回收机制，由系统代理内存管理，从而提高开发效率和避免内存泄漏等问题。
 
 - **标记-清理：**从根对象开始，根据对象的引用关系递归标记可达对象，在清理阶段则对不可达对象进行内存清理，某些GC还会在清理阶段进行内存压缩从而减少内存碎片化。
 - **分代管理：**在托管堆上根据所创建对象的生命周期进行分类，刚创建的对象被称为“第一代”，在上一次“标记-清理”阶段存活下来的对象会被分类为“第二代，以此类推，分代管理的目的是为了`控制对象进行“标记-清理”的频率从而提高GC的效率`。
 
-# 六、委托&事件
+# 八、委托&事件
 
 ## 1.委托
 
@@ -615,7 +620,7 @@ static void Main(string[] args)
 
 一种特殊的多播委托，其相比于普通的多播委托更加安全，事件将多播委托的调用权限隔离在其所在类的内部，并对外部关闭了直接通过赋值符号"="修改多播委托实例的入口，使得外部调用者仅能够进行基本的函数订阅和取消订阅的操作。
 
-# 七、重载&重写
+# 九、重载&重写
 
 ## 1.重载
 
@@ -645,7 +650,7 @@ static void Main(string[] args)
 
 ​	用于声明密封类和密封方法，密封类无法被继承，密封方法无法被重写
 
-# 八、语言相关
+# 十、语言相关
 
 ## 1.关于字典类型
 
