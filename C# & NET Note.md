@@ -152,6 +152,103 @@ public record HttpApiSettings
 >
 > - <span id="schemeToClass">`由方案隔离到单独的类`</span>:将应用程序的配置设置从原始的配置文件中提取，并将其映射到一个单独的.NET类中
 
+- **`相关依赖`**
+
+  - Microsoft.Extensions.Configuration
+
+  - Microsoft.Extensions.Configuration.Json
+
+  ​	解决`.SetBasePath()`的报错
+
+  - Microsoft.Extensions.DependencyInjection
+
+  - Microsoft.Extensions.Options
+
+  - Microsoft.Extensions.Options.ConfigurationExtensions
+
+  ​	解决`services.Configure<TOptions>()`的转化问题
+
+  - System.Configuration.ConfigurationManager
+
+## 3.选项模式样例
+
+- **配置文件**--`appsettings.json`
+
+```json
+{
+  "PersonalInfo": {
+    "Name": "山鬼不识字",
+    "Account": "AsOneWish",
+    "Gender": 1,
+    "Age": 23
+  }
+}
+```
+
+>**关于appsettings.json文件在生成解决方案时不会自动生成到输出目录问题：**
+>
+>```xml
+><ItemGroup>
+>  <None Update="appsettings.json">
+>    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+>  </None>
+></ItemGroup>
+>```
+
+- **程序入口文件**--`Program.cs`
+
+​	读取配置文件，获取其中`PersonalInfo`节点，映射到配置类，注册输出类
+
+```c#
+public static void ConfigureService(ServiceCollection services)
+{
+    IConfigurationBuilder cfgBuilder = new ConfigurationBuilder()
+        .SetBasePath(Directory.GetCurrentDirectory())
+        .AddJsonFile("appsettings.json");
+
+    IConfiguration configuration = cfgBuilder.Build();
+
+    services.Configure<PersonalInfo>(configuration.GetSection("PersonalInfo"));
+    services.AddScoped<Test1>();
+}
+```
+
+​	服务获取并调用，输出配置信息
+
+```c#
+private static void Main(string[] args)
+{
+    ServiceCollection services = new ServiceCollection();
+    ConfigureService(services);
+
+    ServiceProvider builder = services.BuildServiceProvider();
+    Test1 testClass = builder.GetRequiredService<Test1>();
+
+    testClass.Display();
+}
+```
+
+- **输出类**
+
+​	选项模式的使用，并对配置信息进行输出
+
+```c#
+public class Test1
+{
+    private readonly PersonalInfo _personalInfo;
+
+    public Test1(IOptions<PersonalInfo> options)
+    {
+        _personalInfo = options.Value;
+    }
+
+    public void Display()
+    {
+        Console.WriteLine($"Account: {_personalInfo.Account}\nName: {_personalInfo.Name}\nAge: {_personalInfo.Age}\nGender: {_personalInfo.Gender}");
+    }
+}
+```
+
 # 四、异步编程
 
 ## 1.**异步方法**：用`async`关键字修饰的方法
