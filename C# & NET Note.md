@@ -189,9 +189,9 @@ public record HttpApiSettings
 >
 >```xml
 ><ItemGroup>
->  <None Update="appsettings.json">
->    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
->  </None>
+>  	<None Update="appsettings.json">
+>    		<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+>  	</None>
 ></ItemGroup>
 >```
 
@@ -590,19 +590,68 @@ static void init()
 >
 > 依赖注入简化模块的组装过程，降低模块之间的耦合度
 
-## 1.概念
+## 1.依赖关系反转
 
-- **服务**：对象
-- **注册服务**：对象要预先注册，后续才能拿到
-- **服务容器**：负责管理注册的服务（服务的管理者）
-- **查询服务**：创建对象及关联对象（向服务容器要服务的过程）
-- **对象生命周期**：Transient(瞬态)、Scoped（范围）、Singleton（单例）
+**应用程序中的依赖关系方向应该是抽象的方向，而不是实现详细信息的方向。**
 
-> 根据类型来获取和注册服务。可以分别指定`服务类型`（service type）和`实现类型`（implementation type）。这两者可能相同，也可能不同。服务类型可以是类，也可以是接口，建议面向接口编程，更灵活。
+- 直接依赖项关系
+
+​	编译时依赖关系顺着运行时执行的方向流动：若类A调用类B的方法，类B调用类C的方法，则在编译时，类A将取决于类B，类B又取决于类C
+
+![](C:\Files\Notes\Images\C#&NET-2.png)
+
+- 反转依赖项关系 
+
+​	A可以调用B实现的抽象上的方法，让A可以在运行时调用B，而B又在编译时依赖于A控制的接口；运行时，程序执行的流程不变，但接口引入意味着可以轻松插入这些接口的不同实现；**高层模块不再依赖于底层模块，而是依赖于抽象接口**
+
+![](C:\Files\Notes\Images\C#&NET-3.png)
+
+## 2.控制反转
+
+- 一种软件设计原则，是**依赖关系倒置的一种实现方式**；反转了组件对外部资源的控制，将控制权从应用程序代码中转移到了外部容器或框架中
+- 在控制反转中，组件的创建、管理和生命周期由容器和框架来控制，而不是由组件自己来控制，这使得组件之间的依赖关系更加松散
+- 控制反转的一个常见实现是依赖注入，它通过将依赖对象通过构造函数、属性或方法参数传递给组件来实现依赖关系的注入
+
+> 控制反转是依赖关系倒置的一种实现方式，它通过将控制权转移到外部容器或框架中来实现依赖关系的倒置，而依赖关系倒置更关注于高层模块对抽象的依赖，而不是具体的实现。
+
+## 3.WebApplication & IHostService
+
+- `WebApplication`
+  - 通常用于构建和配置ASP.NET Core Web应用程序，允许定义中间件、路由和请求管道，以处理传入的HTTP请求
+  - Web API、Web应用程序、微服务、单页应用程序(SPA)后端
+- `IHostService`
+  - 用于定义应用程序中托管的服务；实现`IHostService`接口的服务可以在应用程序启动时启动，并在应用程序关闭时停止
+  - 通常用于在应用程序启动或关闭时执行一些初始化或清理操作，例如启动后台任务、初始化数据库连接等
+
+## 4.辅助角色服务
+
+- **后台服务**:引用BackgroundService类型
+
+- **托管服务**:实现IHostedService或引用IHostedService本身
+- **长时间运行服务**:持续运行的任何服务
+- **Windows服务**:Windows服务基础结构
+- **辅助角色服务**:引用[辅助角色服务模版](#SupportingRoleServiceTemplate)
+
+> <span id="SupportingRoleServiceTemplate">**辅助角色服务模版**</span>:模板由`Program`和`Worker`类构成
 >
-> .NET控制反转组件取名为`DependencyInjection`,但它包含ServiceLocator的功能
+> ```c#
+> using App.WorkerService;
+> 
+> HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
+> builder.Services.AddHostedService<Worker>();
+> 
+> IHost host = builder.Build();
+> host.Run();
+> ```
+>
+> 前面的`Program`类：
+>
+> - 创建一个`HostApplicationBuilder`
+> - 调用`AddHostedService`以将`Worker`注册为托管服务
+> - 从生成器生成`IHost`
+> - 在运行应用的`host`实例上调用`Run`
 
-## 2.生命周期
+## 5.生命周期
 
 > 不要在长生命周期的对象中引用比它短的生命周期的对象，例如在Singleton对象中引用Transient对象
 
@@ -612,80 +661,91 @@ static void init()
 > - 如果类有状态，且有Scope控制：建议为Scoped
 > - 使用Transient的时候要谨慎
 
+## 6.样例
+
+**作为注册的测试类**
+
 ```c#
-static void Main(string[] args)
+namespace DITest
 {
-    ServiceCollection services = new ServiceCollection();
-    services.AddScoped<TestServiceImpl1>();
-
-    using (ServiceProvider sp = services.BuildServiceProvider())
+    public interface ITestService
     {
-        TestServiceImpl1 t = sp.GetService<TestServiceImpl1>()!;
-        t.Name = "tom";
-        t.SayHi();
+        public void Display();
+    }
 
-        TestServiceImpl1 t1 = sp.GetService<TestServiceImpl1>()!;
-        t1.Name = "jerry";
-        t1.SayHi();
-
-        Console.WriteLine(object.ReferenceEquals(t, t1));
-
-        t.SayHi();
-
-        using (IServiceScope sp1 = sp.CreateScope())
+    public class TestService1 : ITestService
+    {
+        public void Display()
         {
-            // 在scope中获取Scope相关的对象
-            TestServiceImpl1 s1 = sp1.ServiceProvider.GetService<TestServiceImpl1>()!;
+            Console.WriteLine("This is TestService1！！");
+        }
+    }
 
-            TestServiceImpl1 s2 = sp1.ServiceProvider.GetService<TestServiceImpl1>()!;
-
-            Console.WriteLine(object.ReferenceEquals(s1, s2));
+    public class TestService2 : ITestService
+    {
+        public void Display()
+        {
+            Console.WriteLine("This is TestService2！！");
         }
     }
 }
 ```
 
-## 3.服务定位器
+**测试依赖注入中构造函数自解析赋值**
 
 ```c#
-static void Main(string[] args)
+namespace DITest
 {
-    ServiceCollection services = new ServiceCollection();
-
-    services.AddScoped<ITestService, TestServiceImpl1>();
-    services.AddScoped<ITestService, TestServiceImpl2>();
-    //services.AddScoped(typeof(ITestService), typeof(TestServiceImpl1));
-    //services.AddSingleton(typeof(ITestService), new TestServiceImpl1());
-
-    using (ServiceProvider sp = services.BuildServiceProvider())
+    public class Worker
     {
-        /*
-         * 如果找不到服务就返回null
-         * GetService的类型要与ADD*的注册服务类型一致
-         */
-        ITestService ts = sp.GetService<ITestService>()!;
-        //ITestService ts = (ITestService)sp.GetService(typeof(ITestService))!;
-        /*
-         * 找不到就直接抛异常
-         */
-        TestServiceImpl1 ts1 = sp.GetRequiredService<TestServiceImpl1>();
+        private readonly ITestService _testService;
 
-        IEnumerable<ITestService> tss = sp.GetServices<ITestService>();
-        foreach (ITestService t in tss)
+        public Worker(ITestService testService)
         {
-            Console.WriteLine(t.GetType());
+            this._testService = testService;
         }
-        /*
-         * 如果注册了多个服务，而获取是获取单个，以最后一个注册的为准
-         */
-        var tt = sp.GetService<ITestService>();
 
-
+        public void Run()
+        {
+            _testService.Display();
+        }
     }
 }
 ```
 
-## 4..NET依赖注入
+**函数入口-服务注册及获取**
+
+```c#
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+
+namespace DITest
+{
+    internal class Program
+    {
+        public static void Main(string[] args)
+        {
+            HostApplicationBuilder app = Host.CreateApplicationBuilder(args);
+
+            app.Services.AddSingleton<ITestService, TestService1>();
+            app.Services.AddSingleton<ITestService, TestService2>();
+            app.Services.AddSingleton<Worker>();
+
+            IHost host = app.Build();
+
+            IServiceProvider sp = host.Services;
+            Worker worker = sp.GetRequiredService<Worker>();
+            worker.Run();
+
+            host.Run();
+        }
+    }
+}
+```
+
+对于同一个接口的不同实现，后续注册的会覆盖前一个
+
+## 7.总结
 
 **依赖注入具有“传染性”**
 
