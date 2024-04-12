@@ -389,6 +389,8 @@ vite独有的功能，利用`import.meta.glob()`直接导入所有模块，但�
 
 ## 1.DDD 领域驱动设计
 
+
+
 - **应用层**-`Application`
   - 负责协调应用程序的任务和流程
   - 不包含具体的业务逻辑
@@ -407,21 +409,73 @@ vite独有的功能，利用`import.meta.glob()`直接导入所有模块，但�
 
 ![](C:\Files\Notes\Images\ProjectNote-1.png)
 
+[领域基元](https://zhuanlan.zhihu.com/p/340911587)
+
+[应用架构](https://zhuanlan.zhihu.com/p/343388831)
+
+### 1.1 Domain Primitive
+
+在一个特定领域里，拥有精准定义的、可自我验证的、拥有行为的Value Object
+
+- **将隐性的概念显性化** -- Make Implicit Concepts Explicit
+- **将隐性的上下文显性化** -- Make Implicit Context Explicit
+- **封装多对象行为** -- Encapsulate Multi-Object Behavior
+
+### 1.2 实现业务逻辑三种方式
+
+#### 1.2.1 事务脚本
+
+思路同**面向过程编程**一样，要达到目标，需要哪些步骤，然后一步步操作
+
+#### 1.2.2 贫血模型
+
+只包含数据，不包含业务逻辑的类（Entity），就叫做贫血模型（Anemic Domain Model）。其具体的业务逻辑集中在Service中，将数据和操作分开，破坏了面向对象的封装特性，是一种典型的面向过程的编程风格
+
+#### 1.2.3 充血模型
+
+数据和对应的业务逻辑被封装在同一个类中，典型的面向对象编程风格。
+
+> 在基于贫血模型的传统开发中，Service层包含Service类和BO类两部分，BO是贫血模型，只包含数据，不包含具体的业务逻辑，业务逻辑集中在Service类中；
+>
+> 在基于充血模型的DDD开发模式中，Service层包含Service类和Domain类两部分，Domain就相当于贫血模型中的BO，区别在于Domain既包含数据，也包含业务逻辑
+>
+> **基于贫血模型的传统开发，重Service轻BO；基于充血模型的DDD开发模式，轻Service重Domain**
+
+### 1.3 Anti-corruption Layer
+
+**防腐层**，一个上下文通过一些适配和转换与另一个上下文交互。
+
+![](C:\Files\Notes\Images\ProjectNote-3.png)
+
+是一种在不同应用间转换的机制。创建一个防腐层，以根据客户端自己的领域模型为客户提供功能；该层通过其现有接口与另一个系统通信，几乎不需要对其进行任何修改。
+
+在不共享相同领域模型的不同子系统之间实施防腐层（或外观或适配器层），此层转换一个子系统向另一个子系统发出的请求。使用防腐层模式可确保应用程序的设计不受限于对外部子系统的依赖。
+
+因此，防腐层隔离不仅是为了自身领域模型免受其他领域模型的代码的侵害，还在于分离不同的域并确保它们在将来保持分离。
+
+实际开发中提供的功能：
+
+- **适配器**：通过适配器模式，可以将数据转化逻辑封装到ACL内部，降低对业务代码的侵入
+- **缓存**：对于频繁调用且数据变更不频繁的外部依赖，通过在ACL里嵌入缓存逻辑，能够有效的降低对于外部依赖的请求压力
+- **兜底**：如果外部依赖的稳定性较差，一个能够有效提升我们系统稳定性的策略是通过ACL起到兜底的作用，比如当外部依赖出问题后，返回最近一次成功的缓存或业务兜底数据
+- **易于修改**：类似于之前的Repository，ACL的接口类能够很容易的实现Mock或Stub，以便于单元测试
+- **功能开关**
+
 ## 2..NET Standard和.NET Core
 
-​	最开始.NET Framework只支持Windows，而mono是一个社区的跨平台实现，后来出了个.NET Core跨平台了，但是由于.NET Core和mono、.NET Framework是不同的，虽然mono能跑大部分的.NET Framework程序集，但是.NET Core不行而mono也不能跑.NET Core的程序集，.NET Core也不能跑mono和.NET Framework的程序集。
+最开始.NET Framework只支持Windows，而mono是一个社区的跨平台实现，后来出了个.NET Core跨平台了，但是由于.NET Core和mono、.NET Framework是不同的，虽然mono能跑大部分的.NET Framework程序集，但是.NET Core不行而mono也不能跑.NET Core的程序集，.NET Core也不能跑mono和.NET Framework的程序集。
 
-​	由于.NET对库函数的引用类似动态链接库，程序集内并不包含库函数的实现，只包含库函数的签名，然后运行的时候才去加载对应的有实现的程序集完成“链接”过程最后调用，于是.NET Standard就应运而生了。
+由于.NET对库函数的引用类似动态链接库，程序集内并不包含库函数的实现，只包含库函数的签名，然后运行的时候才去加载对应的有实现的程序集完成“链接”过程最后调用，于是.NET Standard就应运而生了。
 
-​	NET Standard参考三个实现的情况，划定了一组API的子集，这组API在.NET Framework、mono和.NET Core上都有实现，然后使.NET Framework、mono和.NET Core都能加载.NET Standard程序集，这样当用户调用.NET Standard里的API的时候，会把调用转发到当前运行时的基础库的实现上。
+NET Standard参考三个实现的情况，划定了一组API的子集，这组API在.NET Framework、mono和.NET Core上都有实现，然后使.NET Framework、mono和.NET Core都能加载.NET Standard程序集，这样当用户调用.NET Standard里的API的时候，会把调用转发到当前运行时的基础库的实现上。
 
-​	这样一来，只要用户的代码`基于.NET Standard编写，就能同时在.NET Framework、mono、.NET Core上跑了`。
+这样一来，只要用户的代码`基于.NET Standard编写，就能同时在.NET Framework、mono、.NET Core上跑了`。
 
-​	而如果要使用各自平台独有的API的话，则不能基于.NET Standard来编写代码，而需要基于.NET Framework、.NET Core或者mono来编写代码。
+而如果要使用各自平台独有的API的话，则不能基于.NET Standard来编写代码，而需要基于.NET Framework、.NET Core或者mono来编写代码。
 
-​	后来到了.NET Standard 2.1的时候，由于.NET Framework掉了队，不再新增新的功能，于是.NET Standard 2.1干脆不支持.NET Framework了，只支持mono和.NET Core。
+后来到了.NET Standard 2.1的时候，由于.NET Framework掉了队，不再新增新的功能，于是.NET Standard 2.1干脆不支持.NET Framework了，只支持mono和.NET Core。
 
-​	再后来mono和.NET Core完成了基础库的统一，变成了新的.NET，于是.NET Standard的使命也结束了，只剩下一个统一的.NET。
+再后来mono和.NET Core完成了基础库的统一，变成了新的.NET，于是.NET Standard的使命也结束了，只剩下一个统一的.NET。
 
 >.NET Standard一般是用来开发`公用库`用的，兼容性好，能在很多.NET版本中使用
 >
@@ -788,7 +842,7 @@ public class PolicyHandler : AuthorizationHandler<PolicyRequirement>
 
 ### 8.4 梳理
 
-​	实际上整个流程就是，首先利用登录的用户获取其相关信息，基于此和配置文件创建Token；在Jwt的配置中设置授权策略，同时说明对于token的验证方式；通过实现Handler，自定义当识别到接口的授权时，对对应方案进行自定义校验。
+实际上整个流程就是，首先利用登录的用户获取其相关信息，基于此和配置文件创建Token；在Jwt的配置中设置授权策略，同时说明对于token的验证方式；通过实现Handler，自定义当识别到接口的授权时，对对应方案进行自定义校验。
 
 ## 9.数据库时区问题
 
@@ -798,4 +852,90 @@ public class PolicyHandler : AuthorizationHandler<PolicyRequirement>
 set timezone='Asia/Shanghai';
 ```
 
-## 10.多租户
+## 10.DRY、KISS、YAGNI三原则
+
+适用于软件设计各个层面
+
+- `DRY `- Don’t Repeat Yourself
+
+**不要总是用相同代码解决相同问题**。尽量在项目中减少重复的代码行、方法、模块。
+
+- `KISS `- Keep It Simple & Stupid
+
+**让代码简单直接**
+
+- `YAGNI `- You Ain’t Gonna Need It
+
+**适可而止**。只有在需要的时候才去添加额外的功能，不要过度设计
+
+## 11 各类对象相关概念
+
+- `DAO`（Data Access Object） **数据访问对象**
+
+是一个数据访问接口，主要是与数据库交互
+
+对照Infrastructure.Core -> Repository -> Entities
+
+- `DTO`（Data Transfer Object） **数据传输对象**
+
+一种设计模式，用于在软件应用程序的子系统或层之间传输数据
+
+通常在数据访问层、业务逻辑层和表示层之间传输数据
+
+主要目的是封装数据并在系统的不同部分之间高效传输
+
+通常只包含数据字段和访问器（获取器和设置器）的方法，但不包含任何业务逻辑
+
+对照Infrastructure.Core -> Entity
+
+- `DO`（Domain Object） **领域对象**
+
+从现实世界中抽象出来的有形或无形的业务实体
+
+反映了业务领域的结构和行为，通常包含`业务逻辑`和`行为方法`
+
+对照Domain -> Object
+
+- `VO`（View Object） **视图对象**
+
+用于展示层， 把某个指定页面（或组件）的所有数据封装起来
+
+如果一个DTO对应一个VO则，DTO=VO；如果一个DTO对应多个VO，则展示层需要把VO转换为服务层对应方法所要求的DTO，传递给服务层
+
+- `AO`（Application Object） **应用对象**
+
+不是一个普遍使用的术语
+
+在应用程序中承担重要角色的对象，但具体含义可能会因上下文而异
+
+- `BO`（Business Object） **业务对象**
+
+用于表示业务领域中的实体和概念的对象
+
+是对业务需求的抽象和建模，代表了业务逻辑层中的实体和行为
+
+> DO **VS** BO
+>
+> - 区别
+>
+>   - DO：表示领域中的实体或概念，是DDD中的一部分，用于建模领域的概念和规则；DO反映了约领域的结构和行为，通常用于表示业务逻辑层和数据访问层之间的数据结构
+>   - BO：主要关注业务逻辑和业务规则的实现，是DDD中的一部分，代表了业务领域中的实体和概念；BO负责实现业务规则和行为，通常与业务逻辑密切相关
+>
+> - 联系：
+>
+>   两者都是表示业务领域中的实体和概念，在一定程度上是相互关联的；业务对象通常是领域对象的一种具体实现或者衍生物，它们可以直接映射到领域对象，或者是基于领域对象构建的
+
+- `PO`（Persistent Object） **持久化对象**
+
+在软件开发中用于数据持久化存储的对象；
+
+通常与数据库中的表或文档等数据存储结构相对应，用于将应用程序中的数据持久化倒持久化存储介质中，或从持久化存储中检索数据
+
+> 特征：
+>
+> - **映射到数据存储结构**
+> - **持久化操作**
+> - **与业务逻辑的解耦**：通常与业务逻辑对象相分离，以实现数据存储和业务逻辑的解耦
+
+- `Entity`（概念实体模型）**实体类和模型**
+- `View`（概念视图模型） **视图模型**
