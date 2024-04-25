@@ -939,3 +939,28 @@ set timezone='Asia/Shanghai';
 
 - `Entity`（概念实体模型）**实体类和模型**
 - `View`（概念视图模型） **视图模型**
+
+## 12.设计模式
+
+**创建型模式**
+
+> 用来解决对象实例化和使用的客户端耦合的模式，可以让客户端和对象实例化都独立变化，做到相互不影响
+
+- [单例模式](https://blog.csdn.net/sinat_40003796/article/details/125594207)
+- [简单工厂模式](https://blog.csdn.net/sinat_40003796/article/details/125558524)
+- [工厂方法模式](https://blog.csdn.net/sinat_40003796/article/details/125848004)
+- [抽象工厂模式](https://blog.csdn.net/sinat_40003796/article/details/125599352)
+- [建造者模式](https://blog.csdn.net/sinat_40003796/article/details/125597300)
+- [原型模式](https://blog.csdn.net/sinat_40003796/article/details/125622374)
+
+**结构型模式**
+
+> 主要研究的是类和对象的组合的问题；包括两种类型，一是类结构型模式：指的是采用继承机制来组合实现功能；二是对象结构性模式：指的是通过组合对象的方式来实现新的功能
+
+- [适配器模式](https://blog.csdn.net/sinat_40003796/article/details/125635861)
+- [桥接模式](https://blog.csdn.net/sinat_40003796/article/details/125640595)
+
+多态的嵌套使用；第一层需要通过第二层来具体实现，通过构造函数注入，从而建立关系；扩展时，及存在多层的依赖时，也可以通过构造函数进行注入
+
+- [装饰模式](https://blog.csdn.net/sinat_40003796/article/details/125714980)
+- [组合模式](https://blog.csdn.net/sinat_40003796/article/details/125723161)

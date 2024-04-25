@@ -1285,6 +1285,29 @@ internal class Bar : IBar<object>
 
 参考链接：[C# - 协变、逆变 看完这篇就懂了 - Virgil-Zhou - 博客园 (cnblogs.com)](https://www.cnblogs.com/VVStudy/p/11404300.html)
 
+## 13.volatile 关键字
+
+`volatile `关键字，目的是告诉编译器所修饰字段的值可能会被多个独立的线程改变，不要对该字段的访问进行[优化](#superior)；使用`volatile`可以确保字段的值是可用的最新值，而且该值不会像其他字段一样受到缓存的影响。
+
+> <span id="superior">**优化**</span>:在`Release`模式下，会对字段的访问进行优化，它假定字段都是由单个线程访问的，把与该字段相关的表达式运算结果编译成常量缓存起来，避免每次访问都重复运算。
+>
+> ```c#
+> public class Worker
+> {
+>     private bool _shouldStop;
+> 
+>     public void DoWork()
+>     {
+>         bool work = false;
+>         // 注意：这里会被编译器优化为 while(true)
+>         while (!_shouldStop)
+>         {
+>             work = !work; // do sth.
+>         }
+>     }
+> }
+> ```
+
 ## Tips
 
 - 如果不显式制定访问修饰符（`public`、`private`），则默认为`private`
