@@ -957,10 +957,31 @@ set timezone='Asia/Shanghai';
 
 > 主要研究的是类和对象的组合的问题；包括两种类型，一是类结构型模式：指的是采用继承机制来组合实现功能；二是对象结构性模式：指的是通过组合对象的方式来实现新的功能
 
-- [适配器模式](https://blog.csdn.net/sinat_40003796/article/details/125635861)
-- [桥接模式](https://blog.csdn.net/sinat_40003796/article/details/125640595)
+- [适配器模式](https://blog.csdn.net/sinat_40003796/article/details/125635861) -- 注重转换接口，将不吻合的接口适配对接
+- [桥接模式](https://blog.csdn.net/sinat_40003796/article/details/125640595) -- 注重分离接口与其实现，支持多维度变化
 
-多态的嵌套使用；第一层需要通过第二层来具体实现，通过构造函数注入，从而建立关系；扩展时，及存在多层的依赖时，也可以通过构造函数进行注入
+- [装饰模式](https://blog.csdn.net/sinat_40003796/article/details/125714980) -- 注重稳定接口，在此前提下为对象扩展功能
+- [组合模式](https://blog.csdn.net/sinat_40003796/article/details/125723161) -- 注重统一接口，将“一对多”关系转化为“一对一”关系
+- [外观模式](https://blog.csdn.net/sinat_40003796/article/details/125725068) -- 注重简化接口，简化组件系统与外部客户程序的依赖关系
+- [享元模式](https://blog.csdn.net/sinat_40003796/article/details/125735655) -- 注重保留接口， 在内部使用共享技术对对象存储进行优化
+- [代理模式](https://blog.csdn.net/sinat_40003796/article/details/125742301) -- 注重假借接口，增加间接层来实现灵活控制
 
-- [装饰模式](https://blog.csdn.net/sinat_40003796/article/details/125714980)
-- [组合模式](https://blog.csdn.net/sinat_40003796/article/details/125723161)
+**行为型模式**
+
+> 主要讨论的是在不同对象之间划分责任和算法的抽象化的问题：
+>
+> --类的行为模式：使用继承关系在几个类之间分配行为
+>
+> --对象的行为模式：使用对象聚合的方式来分配行为
+
+- [模板方法模式](https://blog.csdn.net/sinat_40003796/article/details/125756389)
+- [命令模式](https://blog.csdn.net/sinat_40003796/article/details/125760071)
+- [迭代器模式](https://star-302.blog.csdn.net/article/details/125762129)
+- [观察者模式](https://blog.csdn.net/sinat_40003796/article/details/125778359)
+- [中介者模式](https://blog.csdn.net/sinat_40003796/article/details/125780496)
+- [状态模式](https://blog.csdn.net/sinat_40003796/article/details/125782291)
+- [策略模式](https://blog.csdn.net/sinat_40003796/article/details/125797589)
+- [职责链模式](https://blog.csdn.net/sinat_40003796/article/details/125799083)
+- [访问者模式](https://blog.csdn.net/sinat_40003796/article/details/125840720)
+- [备忘录模式](https://blog.csdn.net/sinat_40003796/article/details/125841880)
+- [解释器模式](https://blog.csdn.net/sinat_40003796/article/details/125844433)
