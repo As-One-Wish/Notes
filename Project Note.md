@@ -985,3 +985,95 @@ set timezone='Asia/Shanghai';
 - [访问者模式](https://blog.csdn.net/sinat_40003796/article/details/125840720)
 - [备忘录模式](https://blog.csdn.net/sinat_40003796/article/details/125841880)
 - [解释器模式](https://blog.csdn.net/sinat_40003796/article/details/125844433)
+
+## 13.AutoUpdater.NET
+
+[AutoUpdater.NET](https://github.com/ravibpatel/AutoUpdater.NET?tab=readme-ov-file)是一个类库，可将自动更新功能添加到桌面应用程序项目中。
+
+### 13.1 **工作原理**
+
+- AutoUpdater.NET从服务器获取包含更新信息的`xml`文件
+
+- 当最新版本大于当前安装的版本，就会显示更新对话框
+- 如果确认更新，则会根据xml文件中的路由下载更新文件进行安装
+
+### 13.2 xml文件相关参数
+
+- `version`:**必须**，提供应用程序最新版本（`X.X.X.X`）
+- `url`:**必须**，提供最新应用程序的安装文件/压缩文件的路径
+- `changelog`:应用程序更改日志的路径
+- `mandatory`:强制性，将忽略"稍后提醒"和"跳过"选项
+  - `mode`:模式，1-隐藏对话框关闭按钮，2-自动开始下载和更新应用程序
+  - `minVersion`:当应用程序安装版本小于此处指定的最小版本时，才会触发强制选项
+- `executable`:可执行文件路径
+- `args`:为Installer提供命令行参数
+- `checksum`:提供更新文件校验和，以检查文件完整性
+
+### 13.3 应用实例
+
+**开启本机IIS服务器**
+
+![](C:\Files\Notes\Images\ProjectNote-4.png)
+
+**创建更新相关文件**
+
+![](C:\Files\Notes\Images\ProjectNote-5.png)
+
+**更新配置文件**
+
+```xml
+<?xml version='1.0' encoding="UTF-8"?>
+<item>
+    <!--在版本标记之间提供应用程序的最新版本。版本必须为X.X.X.X格式。-->
+    <version>1.0.0.2</version>
+    <!--在url标签之间提供最新版本安装程序文件或zip文件的url。自动更新。NET下载这里提供的文件，并在用户按下Update按钮时安装它。-->
+    <url>http://127.0.0.1/Downloads/TestDownload.zip</url>
+    <!--在changelog标记之间提供应用程序更改日志的URL。如果你不提供变更日志的URL，那么更新对话框将不会显示变更日志。-->
+    <changelog>http://127.0.0.1/Updates/UpdateLog.html</changelog>
+    <!--如果你不想让用户跳过这个版本，可以将其设置为true。这将忽略“稍后提醒”和“跳过”选项，并在更新对话框中隐藏“稍后提醒”和“跳过”按钮。-->
+    <mandatory>false</mandatory>
+    <!--提供更新文件的校验和。如果你做这个autotoupater。NET将在执行更新过程之前比较下载文件的校验和，以检查文件的完整性。
+    您可以在校验和标记中提供algorithm属性，以指定应该使用哪个算法来生成下载文件的校验和。目前支持MD5、SHA1、SHA256、SHA384和SHA512。-->
+    <checksum algorithm="MD5">Update file Checksum</checksum>
+</item>
+```
+
+**Winform程序配置**
+
+首先安装`Autoupdater.NET.Official`包
+
+```c#
+using AutoUpdaterDotNET;
+using System;
+using System.Globalization;
+using System.Reflection;
+using System.Threading;
+using System.Windows.Threading;
+
+namespace AutoUpdateNET
+{
+    public partial class Form1 : DevExpress.XtraEditors.XtraForm
+    {
+        public Form1()
+        {
+            InitializeComponent();
+            Assembly assembly = Assembly.GetEntryAssembly();
+          	// 显示版本号
+            label1.Text = $"Current Version : {assembly.GetName().Version}";
+          	// 将当前线程的文化设置为特定文化,这会影响日期格式、货币格式以及 UI 使用的语言
+            Thread.CurrentThread.CurrentCulture = Thread.CurrentThread.CurrentUICulture = CultureInfo.CreateSpecificCulture("zh");
+            AutoUpdater.ShowRemindLaterButton = true;
+          	// 设定计时器
+            DispatcherTimer timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
+            timer.Tick += delegate { AutoUpdater.Start("http://127.0.0.1/Updates/AutoUpdaterStarter.xml"); };
+            timer.Start();
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            AutoUpdater.Start("http://127.0.0.1/Updates/AutoUpdaterStarter.xml");
+        }
+    }
+}
+```
+
