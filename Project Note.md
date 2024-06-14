@@ -1077,3 +1077,64 @@ namespace AutoUpdateNET
 }
 ```
 
+## 14.Quartz.NET
+
+[Quartz.NET中文文档](https://geekdaxue.co/read/devenliu@quartz-3.x/getting-started)
+
+[Quartz.NET官方文档](https://www.quartz-scheduler.net/documentation/quartz-3.x/quick-start.html)
+
+- 灵活的指定某项任务
+- 灵活的启动时间配置
+- 传递参数并且监听
+
+**简单使用**
+
+- 创建任务
+
+需要继承`IJob`接口，实现`Execute()`方法
+
+```C#
+public class TestJob : IJob
+{
+    public async Task Execute(IJobExecutionContext context)
+    {
+        await Console.Out.WriteLineAsync($"{DateTime.Now}:Hello!");
+    }
+}
+
+//创建一个工作
+IJobDetail job = JobBuilder.Create<TestJob>()
+ 	.WithIdentity("TestJob", "Test")
+	.Build();
+```
+
+- 配置任务参数
+
+为任务配置一个触发条件及相关的参数。当该配置的参数一旦达到了条件，任务将被触发
+
+```c#
+//创建一个触发条件
+ITrigger trigger = TriggerBuilder.Create()
+   .WithIdentity("TestJobTrigger", "Test")
+   .WithSimpleSchedule(x =>
+   {
+       x.WithIntervalInSeconds(3).RepeatForever();
+   })
+   .Build();
+```
+
+- 启动任务
+
+创建一个任务调度器，将任务和配置添加到调度器当中
+
+```c#
+StdSchedulerFactory factory = new StdSchedulerFactory();
+//创建任务调度器
+IScheduler scheduler = await factory.GetScheduler();
+//启动任务调度器
+scheduler.Start();  
+
+//将创建的任务和触发器条件添加到创建的任务调度器当中
+scheduler.ScheduleJob(job, trigger);
+```
+
