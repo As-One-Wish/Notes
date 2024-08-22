@@ -1371,10 +1371,10 @@ internal class Bar : IBar<object>
 > }
 > ```
 
-## Tips
+# $\bigstar$Tips
 
-- 如果不显式制定访问修饰符（`public`、`private`），则默认为`private`
 - 对于具有多个元素的数据类型对象，例如数组、字典等，直接输出会输出对应的类型
 - `string`中的每个字符是`char`类型
 - `Console.Read()`读取为`int`类型，`Console.ReadLine()`读取为`string`类型
+- 值类型的实例构造器只有显式调用才会执行。
 
