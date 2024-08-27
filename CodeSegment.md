@@ -126,3 +126,91 @@ public async Task<IActionResult> ImportShootingPoint([FromForm] IFormFile file, 
 }
 ```
 
+# 流&文件互转
+
+> **流使用前记得使用`Seek(0, SeekOrigin.Begin)`重置指针位置**
+
+### 内存流&文件流
+
+```c#
+// FileStream --> MemoryStream
+using System.IO;
+
+using (FileStream fileStream = new FileStream("filePath", FileMode.Open))
+{
+    using (MemoryStream memoryStream = new MemoryStream())
+    {
+        fileStream.CopyTo(memoryStream);
+    }
+}
+
+```
+
+```C#
+// MemoryStream --> FileStream
+
+memoryStream.Seek(0, SeekOrigin.Begin);
+using (var fileStream = new FileStream("filepath", FileMode.Create, FileAccess.Write))
+{
+    await memoryStream.CopyToAsync(fileStream);
+}
+```
+
+>`FileMode`
+>
+>- FileMode.**Append**
+>  - 打开现有文件，并将数据添加到文件末尾；保证文件存在
+>  - 与`FileAccess.Write`或`FileAccess.ReadWrite`一起使用
+>
+>- FileMode.**Create**：创建新文件，已存在则覆盖
+>
+>- FileMode.**CreateNew**：创建新文件，已存在则报错
+>
+>- FileMode.**Open**：打开现有文件，不存在则报错
+>
+>- FileMode.**OpenOrCreate**：打开一个文件，不存在则创建
+>
+>- FileMode.**Truncate**：打开并清空现有文件，不存在则报错
+>
+>`FileAccess`
+>
+>- FileAccess.**Read**：只允许读取文件内容
+>
+>- FileAccess.**Write**：只允许写入文件内容
+>
+>- FileAccess.**ReadWrite**：允许同时读取和写入文件
+
+### 流&字节数组
+
+```c#
+// Stream --> byte[]
+using System.IO;
+
+using (MemoryStream memoryStream = new MemoryStream())
+{
+    byte[] data = memoryStream.ToArray();
+}
+```
+
+```C#
+// byte[] --> Stream
+
+byte[] byteArray = new byte[] { /* 一些数据 */ };
+MemoryStream memoryStream = new MemoryStream(byteArray);
+```
+
+### 文件&字节数组
+
+```C#
+// File --> byte[]
+
+byte[] fileData = File.ReadAllBytes("filePath");
+```
+
+```c#
+// byte[] --> File
+
+byte[] data = new byte[] { /* 一些数据 */ };
+File.WriteAllBytes("filePath", data);
+```
+
