@@ -605,6 +605,12 @@ https://github.com/yitter/IdGenerator?tab=readme-ov-file
 > - 是一种生成分布式全局唯一ID的算法，生成的ID称为`Snowflake IDs`或`snowflakes`
 > - 一个Snowflake ID有64比特。前41位是时间戳，表示了自选定的时期以来的毫秒数。 接下来的10位代表计算机ID，防止冲突。其余12位代表每台机器上生成ID的序列号，这允许在同一毫秒内创建多个Snowflake ID。最后以十进制将数字序列化。
 
+**ID组成**
+
+- 相对基础时间的时间差：生成ID时系统时间减去BaseTime的总时间差（ms）
+- WorkerId：区分不同机器或应用的唯一ID
+- 序列数：毎毫秒下的序列数
+
 ## 8.Jwt认证及授权
 
 - `Authentication`(认证):标识用户的身份，一般发生在登录的时候
@@ -1137,4 +1143,225 @@ scheduler.Start();
 //将创建的任务和触发器条件添加到创建的任务调度器当中
 scheduler.ScheduleJob(job, trigger);
 ```
+
+## 15.WebSocket
+
+https://blog.csdn.net/guoqi_666/article/details/137260613
+
+### 15.1 WebSocket服务端建立
+
+使用`TouchSocket`(https://touchsocket.net/docs/current/)
+
+```c#
+// 创建一个 HttpService 实例
+var httpService = new HttpService();
+
+// 配置 WebSocket 服务
+httpService.Setup(new TouchSocketConfig()
+    .SetListenIPHosts(8888) // 设置监听的端口
+    .ConfigurePlugins(a =>
+    {
+        // 配置 WebSocket 插件
+        a.UseWebSocket()
+         .SetWSUrl("/ws") // 设置 WebSocket URL
+         .UseAutoPong(); // 自动回应 Pong 消息
+
+        // 配置 JSON-RPC 插件（可选）
+        a.UseWebSocketJsonRpc()
+         .SetAllowJsonRpc((socketClient, context) =>
+         {
+             // 根据需要判断是否允许 JSON-RPC
+             return true;
+         });
+    }));
+// 启动服务
+httpService.Start();
+// 保持程序运行
+Console.ReadLine();
+httpService.Stop(); // 停止服务
+```
+
+> `JSON-RPC`:远程调用(Remote Procedure Call，PRC)协议，通过Json格式进行通信
+
+# 三、其他部分
+
+## 1.流媒体协议对比
+
+- **RTSP(Real-Time Streaming Protocol)**
+  - 网络协议,用于控制音频和视频流的播放;允许客户端控制流的播放暂停和停止
+  - 传输方式：UDP/TCP
+  - 特点
+    - 支持实时控制
+    - 适用于实时传播和点播(VOD)
+    - 常与RTP结合使用
+- **RTP(Real-Time Transport Protocol)**
+  - 用于传输音频和视频数据的协议;常与RTSP一起使用
+  - 传输方式：UDP
+  - 特点
+    - 提供时间戳和序列号,以确保顺序和同步
+    - 不保证数据包的交付,适合实时应用
+- **RTMP(Real-Time Messaging Protocol)**
+  - 主要用于音频、视频和数据的实时传输
+  - 传输方式：TCP
+  - 特点
+    - 低延迟，适合实时流媒体
+    - 支持双向通信
+- **HLS(HTTP Live Streaming)**
+  - 一种基于HTTP的流媒体协议
+  - 传输方式：HTTP
+  - 特点
+    - 支持自适应比特率流，以适应不同网络条件
+    - 使用分段视频文件，易于通过HTTP传输
+    - 确保兼容性，支持多种设备
+
+- **DASH(Dynamic Adaptive Streaming over HTTP)**
+  - 开放标准的流媒体协议，旨在通过HTTP提供自适应流
+  - 传输方式：HTTP
+  - 特点：
+    - 类似于HLS，但是开放标准，支持多种编码格式
+    - 自适应比特率，可以根据用户的网络条件动态调整
+
+- **SRT(Secure Reliable Transport)**
+  - 高性能的流媒体传输协议，旨在通过不稳定的网络传输高质量的音视频
+  - 传输方式：UDP
+  - 特点
+    - 提供丢包恢复和加密功能
+    - 适合低延迟和高可靠性需求的应用
+
+- **WebRTC(Web Real-Time Communication)**
+  - 一个开源项目，旨在实现网页浏览器之间的实时音频、视频和数据共享；提供了一组标准的API，可以在网页中实现实时通信
+  - 特点
+    - 实时通信：支持音视频和数据流的低延迟传输
+    - 点对点对接：浏览器间直接连接，减少服务器负担；使用STUN和TURN服务器进行NAT穿越，保证连接稳定性
+    - 强大安全性：所有媒体流都通过加密传输；使用DTLS和SRTP技术
+    - 跨平台支持
+    - 数据通道：除了音视频流，还支持数据通道进行任意类型的数据传输
+
+  - 工作原理
+    - 信令：WebRTC本身不定义信令机制，需要使用WebSocket、HTTP或其他方法来交换连接所需要的数据（如SDP信息和ICE候选者）
+    - ICE机制：WebRTC使用ICE协议来发现可以用于建立连接的网络路径
+    - 媒体流处理：通过getUserMedia API访问用户的音频和视频设备，然后将流直接传输到对端
+
+
+|   特性   |     RTSP/RTMP     |     HLS/DASH      |      WebRTC      |
+| :------: | :---------------: | :---------------: | :--------------: |
+| 传输方式 | 服务器-客户端模式 | 服务器-客户端模式 |   点对点、UDP    |
+|   延迟   |     低至中等      |     中等至高      |        低        |
+| 数据类型 |      音视频       |    主要是视频     | 音视频、数据通道 |
+|   加密   |    需额外实现     |    支持(HTTPS)    |     默认支持     |
+| 使用场景 |    直播、点播     |    直播、点播     |     实时通信     |
+
+## 2.RTSP服务器配置
+
+### 2.1 MediaMTX下载
+
+[Releases · bluenviron/mediamtx (github.com)](https://github.com/bluenviron/mediamtx/releases)
+
+![image-20240913141713037](C:\Users\28968\AppData\Roaming\Typora\typora-user-images\image-20240913141713037.png)
+
+### 2.2 部署
+
+解压到当前文件夹：
+
+```shell
+tar zxvf mediamtx_v1.9.0_linux_amd64.tar.gz
+```
+
+修改配置文件：
+
+```yml
+logDestinations: [file] # 日志保存为文件
+
+authInternalUsers: # 以配置文件内部说明给用户
+- user: any # 不加限制
+  pass: 
+  ips: []
+  permissions:
+  - action: publish
+    path: 
+  - action: read
+    path:
+  - action: playback
+    path: 
+    
+# RTSP内容配置
+rtsp: yes
+protocols: [tcp]
+encryption: "no"
+rtspAddress: 0.0.0.0:18088
+# RTMP内容配置
+rtmp: yes
+rtmpAddress: :18085
+rtmpEncryption: "no"
+```
+
+设置启动服务：
+
+```shell
+sudo vi /etc/systemd/system/mediamtx.service
+```
+
+```ini
+[Unit] # 包含服务的描述和依赖信息
+Description=MediaMTX Server
+# 指定此服务在network.target之后启动，确保网络服务可用
+After=network.target
+
+[Service] # 定义服务的执行和运行环境
+# 启动服务的命令和路径
+ExecStart=/usr/local/rtsp/mediamtx
+# 服务运行时的工作目录
+WorkingDirectory=/usr/local/rtsp
+# 重启策略
+Restart=always
+# 服务运行时环境变量
+Environment=MEDIAMTX_CONFIG=/usr/local/rtsp/mediamtx.yml  # 如果使用自定义配置文件
+
+[Install] # 执行服务的安装和启动行为
+# 指定在哪个目标下该服务应该被启动 multi-user.target 通常表示系统的常规运行状态
+WantedBy=multi-user.target
+```
+
+```shell
+sudo systemctl start mediamtx  # 启动
+sudo systemctl restart mediamtx  # 重启
+sudo systemctl status mediamtx  # 状态
+sudo systemctl stop mediamtx  # 停止
+```
+
+### 2.3 Nginx配置
+
+```json
+http{
+    server {
+        listen 1888;  # 外网可访问的端口
+
+        location / {
+            proxy_pass http://172.22.0.94:18088;  # 内网mediamtx地址
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        }
+    }
+
+    server{
+        listen 1885;
+
+        location / {
+            proxy_pass http://172.22.0.94:18085;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        }
+    }
+}
+```
+
+### 2.4 推拉流
+
+> 推流/拉流地址：
+>
+> ​	rtsp://<外网IP>:1888/<名称>
+>
+> ​	rtmp://<外网IP>:1885/<名称>
 
