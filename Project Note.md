@@ -413,9 +413,7 @@ vite独有的功能，利用`import.meta.glob()`直接导入所有模块，但�
 
 [应用架构](https://zhuanlan.zhihu.com/p/343388831)
 
-[DDD领域驱动涉及简单例子](https://www.cnblogs.com/tianqing/p/18148759)
 
-[Asp.NET Core + DDD Demo](https://github.com/jasontaylordev/CleanArchitecture.git)
 
 ### 1.1 Domain Primitive
 
@@ -464,6 +462,14 @@ vite独有的功能，利用`import.meta.glob()`直接导入所有模块，但�
 - **兜底**：如果外部依赖的稳定性较差，一个能够有效提升我们系统稳定性的策略是通过ACL起到兜底的作用，比如当外部依赖出问题后，返回最近一次成功的缓存或业务兜底数据
 - **易于修改**：类似于之前的Repository，ACL的接口类能够很容易的实现Mock或Stub，以便于单元测试
 - **功能开关**
+
+### 1.4 相关文档
+
+[架构设计快速入门——领域驱动设计(DDD)（C#）_c# ddd-CSDN博客](https://blog.csdn.net/qq_31463571/article/details/134346841)
+
+[DDD领域驱动涉及简单例子](https://www.cnblogs.com/tianqing/p/18148759)
+
+[Asp.NET Core + DDD Demo](https://github.com/jasontaylordev/CleanArchitecture.git)
 
 ## 2..NET Standard和.NET Core
 
