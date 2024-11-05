@@ -389,7 +389,7 @@ vite独有的功能，利用`import.meta.glob()`直接导入所有模块，但�
 
 ## 1.DDD 领域驱动设计
 
-
+![](C:\Files\Notes\Images\ProjectNote-6.png)
 
 - **应用层**-`Application`
   - 负责协调应用程序的任务和流程
@@ -412,6 +412,10 @@ vite独有的功能，利用`import.meta.glob()`直接导入所有模块，但�
 [领域基元](https://zhuanlan.zhihu.com/p/340911587)
 
 [应用架构](https://zhuanlan.zhihu.com/p/343388831)
+
+[DDD领域驱动涉及简单例子](https://www.cnblogs.com/tianqing/p/18148759)
+
+[Asp.NET Core + DDD Demo](https://github.com/jasontaylordev/CleanArchitecture.git)
 
 ### 1.1 Domain Primitive
 
