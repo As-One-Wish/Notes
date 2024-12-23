@@ -32,3 +32,10 @@ HKEY_CLASSES_ROOT\Folder\shell\opennewwindow\command
 explorer.exe /e, %1
 ```
 
+# Q:"错误CS0006:未能找到元数据文件"
+
+**解决：**
+
+右键解决方案->点击批生成->勾选缺少的元数据文件，重新生成
+
+https://blog.csdn.net/weixin_44144122/article/details/103174114
