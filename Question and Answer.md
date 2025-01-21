@@ -39,3 +39,13 @@ explorer.exe /e, %1
 右键解决方案->点击批生成->勾选缺少的元数据文件，重新生成
 
 https://blog.csdn.net/weixin_44144122/article/details/103174114
+
+
+
+# Q:使用Nuget报错："程序包还原失败，正在回滚..."
+
+**解决：**
+
+![image-20250120101051848](C:\Users\28968\AppData\Roaming\Typora\typora-user-images\image-20250120101051848.png)
+
+在Nuget的程序包源中去掉不需要的(原错误是删除了本地的Devpress文件，但是Nuget中还有其程序包源)
